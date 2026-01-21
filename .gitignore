@@ -31,6 +31,9 @@ Thumbs.db
 # Testing
 coverage/
 
+# Vercel
+.vercel
+
 # Prisma
 prisma/migrations/*
 !prisma/migrations/.gitkeep

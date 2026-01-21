@@ -43,12 +43,14 @@ app.use((req, res) => {
 // Error handler (debe ser el último middleware)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`
-🚀 Server ready at: http://localhost:${PORT}
-📊 Environment: ${process.env.NODE_ENV || 'development'}
-🔐 API Base: http://localhost:${PORT}/api
-  `);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
+  🚀 Server ready at: http://localhost:${PORT}
+  📊 Environment: ${process.env.NODE_ENV || 'development'}
+  🔐 API Base: http://localhost:${PORT}/api
+    `);
+  });
+}
 
 export default app;
