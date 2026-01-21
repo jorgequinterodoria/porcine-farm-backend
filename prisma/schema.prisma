@@ -1,0 +1,912 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// SISTEMA Y MULTI-TENANCY
+// ============================================
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  subdomain String   @unique @db.VarChar(100)
+  email     String   @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  address   String?  @db.Text
+  
+  country      String? @db.VarChar(100)
+  stateProvince String? @db.VarChar(100) @map("state_province")
+  city         String? @db.VarChar(100)
+  postalCode   String? @db.VarChar(20) @map("postal_code")
+  
+  // Suscripción
+  subscriptionPlan       String    @default("free") @db.VarChar(50) @map("subscription_plan")
+  subscriptionStatus     String    @default("active") @db.VarChar(50) @map("subscription_status")
+  subscriptionStartDate  DateTime? @map("subscription_start_date") @db.Timestamp(6)
+  subscriptionEndDate    DateTime? @map("subscription_end_date") @db.Timestamp(6)
+  maxAnimals             Int       @default(100) @map("max_animals")
+  maxUsers               Int       @default(5) @map("max_users")
+  
+  // Configuración
+  timezone String  @default("UTC") @db.VarChar(50)
+  currency String  @default("USD") @db.VarChar(10)
+  language String  @default("es") @db.VarChar(10)
+  settings Json    @default("{}")
+  
+  // Auditoría
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+  
+  // Relaciones
+  users                   User[]
+  facilities              Facility[]
+  pens                    Pen[]
+  animals                 Animal[]
+  weightRecords           WeightRecord[]
+  animalMovements         AnimalMovement[]
+  batches                 Batch[]
+  batchAnimals            BatchAnimal[]
+  breedingServices        BreedingService[]
+  pregnancies             Pregnancy[]
+  farrowings              Farrowing[]
+  weanings                Weaning[]
+  healthRecords           HealthRecord[]
+  vaccinations            Vaccination[]
+  medicationTreatments    MedicationTreatment[]
+  mortalityRecords        MortalityRecord[]
+  feedTypes               FeedType[]
+  feedInventory           FeedInventory[]
+  feedMovements           FeedMovement[]
+  feedConsumption         FeedConsumption[]
+  transactionCategories   TransactionCategory[]
+  financialTransactions   FinancialTransaction[]
+  animalSales             AnimalSale[]
+  animalSaleDetails       AnimalSaleDetail[]
+  tasks                   Task[]
+  dailyMetrics            DailyMetric[]
+  notifications           Notification[]
+  auditLogs               AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String   @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  firstName    String   @map("first_name") @db.VarChar(100)
+  lastName     String   @map("last_name") @db.VarChar(100)
+  phone        String?  @db.VarChar(50)
+  avatarUrl    String?  @map("avatar_url") @db.Text
+  
+  role        String @default("operator") @db.VarChar(50)
+  permissions Json   @default("{}")
+  
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  lastLogin           DateTime? @map("last_login") @db.Timestamp(6)
+  resetToken          String?   @map("reset_token") @db.VarChar(255)
+  resetTokenExpires   DateTime? @map("reset_token_expires") @db.Timestamp(6)
+  
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+  
+  tenant                      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  weightRecordsRecorded       WeightRecord[]           @relation("RecordedBy")
+  animalMovementsRecorded     AnimalMovement[]         @relation("RecordedBy")
+  breedingServicesTechnician  BreedingService[]        @relation("Technician")
+  farrowingsAttended          Farrowing[]              @relation("AttendedBy")
+  weaningsRecorded            Weaning[]                @relation("RecordedBy")
+  healthRecordsVeterinarian   HealthRecord[]           @relation("Veterinarian")
+  vaccinationsAdministered    Vaccination[]            @relation("AdministeredBy")
+  treatmentsAdministered      MedicationTreatment[]    @relation("AdministeredBy")
+  mortalityRecordsRecorded    MortalityRecord[]        @relation("RecordedBy")
+  feedMovementsRecorded       FeedMovement[]           @relation("RecordedBy")
+  feedConsumptionRecorded     FeedConsumption[]        @relation("RecordedBy")
+  financialTransactionsRecorded FinancialTransaction[] @relation("RecordedBy")
+  animalSalesRecorded         AnimalSale[]             @relation("RecordedBy")
+  tasksAssigned               Task[]                   @relation("AssignedTo")
+  tasksCreated                Task[]                   @relation("CreatedBy")
+  notifications               Notification[]
+  auditLogs                   AuditLog[]
+  
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ============================================
+// CATÁLOGOS MAESTROS
+// ============================================
+
+model Breed {
+  id                 String   @id @default(uuid()) @db.Uuid
+  code               String   @unique @db.VarChar(50)
+  name               String   @db.VarChar(100)
+  description        String?  @db.Text
+  originCountry      String?  @map("origin_country") @db.VarChar(100)
+  typicalWeightRange String?  @map("typical_weight_range") @db.VarChar(50)
+  characteristics    String?  @db.Text
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  animals Animal[]
+  
+  @@map("breeds")
+}
+
+model Medication {
+  id                   String   @id @default(uuid()) @db.Uuid
+  code                 String   @unique @db.VarChar(50)
+  commercialName       String   @map("commercial_name") @db.VarChar(255)
+  genericName          String?  @map("generic_name") @db.VarChar(255)
+  category             String?  @db.VarChar(100)
+  presentation         String?  @db.VarChar(100)
+  withdrawalPeriodDays Int?     @map("withdrawal_period_days")
+  dosageInstructions   String?  @map("dosage_instructions") @db.Text
+  manufacturer         String?  @db.VarChar(255)
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  treatments MedicationTreatment[]
+  
+  @@map("medications")
+}
+
+model Vaccine {
+  id                  String   @id @default(uuid()) @db.Uuid
+  code                String   @unique @db.VarChar(50)
+  name                String   @db.VarChar(255)
+  disease             String   @db.VarChar(100)
+  type                String?  @db.VarChar(50)
+  manufacturer        String?  @db.VarChar(255)
+  applicationRoute    String?  @map("application_route") @db.VarChar(50)
+  dosage              String?  @db.VarChar(100)
+  boosterRequired     Boolean  @default(false) @map("booster_required")
+  boosterIntervalDays Int?     @map("booster_interval_days")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  vaccinations Vaccination[]
+  
+  @@map("vaccines")
+}
+
+model Disease {
+  id                 String   @id @default(uuid()) @db.Uuid
+  code               String   @unique @db.VarChar(50)
+  name               String   @db.VarChar(255)
+  scientificName     String?  @map("scientific_name") @db.VarChar(255)
+  category           String?  @db.VarChar(100)
+  severity           String?  @db.VarChar(50)
+  symptoms           String?  @db.Text
+  treatmentProtocol  String?  @map("treatment_protocol") @db.Text
+  preventionMeasures String?  @map("prevention_measures") @db.Text
+  isZoonotic         Boolean  @default(false) @map("is_zoonotic")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  healthRecords    HealthRecord[]
+  mortalityRecords MortalityRecord[]
+  
+  @@map("diseases")
+}
+
+// ============================================
+// INFRAESTRUCTURA
+// ============================================
+
+model Facility {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  code                String    @db.VarChar(50)
+  name                String    @db.VarChar(255)
+  facilityType        String    @map("facility_type") @db.VarChar(100)
+  parentFacilityId    String?   @map("parent_facility_id") @db.Uuid
+  capacity            Int?
+  areaSqm             Decimal?  @map("area_sqm") @db.Decimal(10, 2)
+  description         String?   @db.Text
+  locationDescription String?   @map("location_description") @db.Text
+  coordinates         String?   @db.Text // Guardar como string "lat,lng"
+  
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+  
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentFacility  Facility? @relation("FacilityHierarchy", fields: [parentFacilityId], references: [id])
+  childFacilities Facility[] @relation("FacilityHierarchy")
+  pens            Pen[]
+  tasks           Task[]
+  
+  @@unique([tenantId, code])
+  @@map("facilities")
+}
+
+model Pen {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  facilityId        String    @map("facility_id") @db.Uuid
+  code              String    @db.VarChar(50)
+  name              String    @db.VarChar(100)
+  capacity          Int
+  areaSqm           Decimal?  @map("area_sqm") @db.Decimal(10, 2)
+  hasFeeder         Boolean   @default(false) @map("has_feeder")
+  hasWaterer        Boolean   @default(false) @map("has_waterer")
+  hasClimateControl Boolean   @default(false) @map("has_climate_control")
+  notes             String?   @db.Text
+  
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+  
+  tenant               Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  facility             Facility         @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  animals              Animal[]
+  movementsFrom        AnimalMovement[] @relation("FromPen")
+  movementsTo          AnimalMovement[] @relation("ToPen")
+  feedConsumption      FeedConsumption[]
+  tasks                Task[]
+  
+  @@unique([tenantId, facilityId, code])
+  @@map("pens")
+}
+
+// ============================================
+// ANIMALES
+// ============================================
+
+model Animal {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  internalCode   String    @map("internal_code") @db.VarChar(50)
+  electronicId   String?   @map("electronic_id") @db.VarChar(100)
+  visualId       String?   @map("visual_id") @db.VarChar(50)
+  breedId        String?   @map("breed_id") @db.Uuid
+  sex            String    @db.VarChar(10)
+  birthDate      DateTime  @map("birth_date") @db.Date
+  birthWeight    Decimal?  @map("birth_weight") @db.Decimal(10, 2)
+  
+  motherId     String? @map("mother_id") @db.Uuid
+  fatherId     String? @map("father_id") @db.Uuid
+  geneticLine  String? @map("genetic_line") @db.VarChar(100)
+  
+  currentStatus String  @default("active") @map("current_status") @db.VarChar(50)
+  currentPenId  String? @map("current_pen_id") @db.Uuid
+  entryDate     DateTime? @map("entry_date") @db.Date
+  purpose       String? @db.VarChar(50)
+  
+  origin           String?  @db.VarChar(255)
+  acquisitionCost  Decimal? @map("acquisition_cost") @db.Decimal(10, 2)
+  notes            String?  @db.Text
+  customFields     Json     @default("{}") @map("custom_fields")
+  
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
+  
+  tenant                 Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  breed                  Breed?                 @relation(fields: [breedId], references: [id])
+  mother                 Animal?                @relation("MotherRelation", fields: [motherId], references: [id])
+  father                 Animal?                @relation("FatherRelation", fields: [fatherId], references: [id])
+  offspringFromMother    Animal[]               @relation("MotherRelation")
+  offspringFromFather    Animal[]               @relation("FatherRelation")
+  currentPen             Pen?                   @relation(fields: [currentPenId], references: [id])
+  weightRecords          WeightRecord[]
+  movements              AnimalMovement[]
+  batchAnimals           BatchAnimal[]
+  breedingServicesFemale BreedingService[]      @relation("Female")
+  breedingServicesMale   BreedingService[]      @relation("Male")
+  pregnancies            Pregnancy[]
+  farrowings             Farrowing[]
+  healthRecords          HealthRecord[]
+  vaccinations           Vaccination[]
+  medicationTreatments   MedicationTreatment[]
+  mortalityRecords       MortalityRecord[]
+  feedConsumption        FeedConsumption[]
+  financialTransactions  FinancialTransaction[]
+  animalSaleDetails      AnimalSaleDetail[]
+  tasks                  Task[]
+  
+  @@unique([tenantId, internalCode])
+  @@index([tenantId])
+  @@index([currentStatus])
+  @@index([currentPenId])
+  @@index([birthDate])
+  @@map("animals")
+}
+
+model WeightRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  animalId        String   @map("animal_id") @db.Uuid
+  weightKg        Decimal  @map("weight_kg") @db.Decimal(10, 2)
+  measurementDate DateTime @map("measurement_date") @db.Date
+  ageDays         Int?     @map("age_days")
+  recordedBy      String?  @map("recorded_by") @db.Uuid
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal   Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  recorder User?  @relation("RecordedBy", fields: [recordedBy], references: [id])
+  
+  @@index([animalId, measurementDate])
+  @@map("weight_records")
+}
+
+model AnimalMovement {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  animalId     String   @map("animal_id") @db.Uuid
+  movementType String   @map("movement_type") @db.VarChar(50)
+  fromPenId    String?  @map("from_pen_id") @db.Uuid
+  toPenId      String?  @map("to_pen_id") @db.Uuid
+  movementDate DateTime @default(now()) @map("movement_date") @db.Timestamp(6)
+  reason       String?  @db.VarChar(255)
+  notes        String?  @db.Text
+  recordedBy   String?  @map("recorded_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal   Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  fromPen  Pen?   @relation("FromPen", fields: [fromPenId], references: [id])
+  toPen    Pen?   @relation("ToPen", fields: [toPenId], references: [id])
+  recorder User?  @relation("RecordedBy", fields: [recordedBy], references: [id])
+  
+  @@index([animalId, movementDate])
+  @@map("animal_movements")
+}
+
+model Batch {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  code            String    @db.VarChar(50)
+  name            String    @db.VarChar(255)
+  batchType       String    @map("batch_type") @db.VarChar(50)
+  startDate       DateTime  @map("start_date") @db.Date
+  expectedEndDate DateTime? @map("expected_end_date") @db.Date
+  actualEndDate   DateTime? @map("actual_end_date") @db.Date
+  initialCount    Int?      @map("initial_count")
+  currentCount    Int?      @map("current_count")
+  targetWeight    Decimal?  @map("target_weight") @db.Decimal(10, 2)
+  notes           String?   @db.Text
+  status          String    @default("active") @db.VarChar(50)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batchAnimals         BatchAnimal[]
+  healthRecords        HealthRecord[]
+  vaccinations         Vaccination[]
+  medicationTreatments MedicationTreatment[]
+  feedConsumption      FeedConsumption[]
+  financialTransactions FinancialTransaction[]
+  tasks                Task[]
+  
+  @@unique([tenantId, code])
+  @@map("batches")
+}
+
+model BatchAnimal {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  batchId    String    @map("batch_id") @db.Uuid
+  animalId   String    @map("animal_id") @db.Uuid
+  joinDate   DateTime  @map("join_date") @db.Date
+  exitDate   DateTime? @map("exit_date") @db.Date
+  exitReason String?   @map("exit_reason") @db.VarChar(100)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batch  Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  
+  @@unique([batchId, animalId, joinDate])
+  @@map("batch_animals")
+}
+
+// ============================================
+// REPRODUCCIÓN
+// ============================================
+
+model BreedingService {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  femaleId             String   @map("female_id") @db.Uuid
+  serviceDate          DateTime @map("service_date") @db.Date
+  serviceType          String   @map("service_type") @db.VarChar(50)
+  maleId               String?  @map("male_id") @db.Uuid
+  semenBatch           String?  @map("semen_batch") @db.VarChar(100)
+  semenProvider        String?  @map("semen_provider") @db.VarChar(255)
+  heatDetectionMethod  String?  @map("heat_detection_method") @db.VarChar(100)
+  technicianId         String?  @map("technician_id") @db.Uuid
+  notes                String?  @db.Text
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  female     Animal      @relation("Female", fields: [femaleId], references: [id], onDelete: Cascade)
+  male       Animal?     @relation("Male", fields: [maleId], references: [id])
+  technician User?       @relation("Technician", fields: [technicianId], references: [id])
+  pregnancies Pregnancy[]
+  
+  @@index([femaleId, serviceDate])
+  @@map("breeding_services")
+}
+
+model Pregnancy {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  animalId               String    @map("animal_id") @db.Uuid
+  breedingServiceId      String?   @map("breeding_service_id") @db.Uuid
+  confirmationDate       DateTime? @map("confirmation_date") @db.Date
+  confirmationMethod     String?   @map("confirmation_method") @db.VarChar(100)
+  expectedFarrowingDate  DateTime? @map("expected_farrowing_date") @db.Date
+  actualFarrowingDate    DateTime? @map("actual_farrowing_date") @db.Date
+  pregnancyStatus        String    @default("confirmed") @map("pregnancy_status") @db.VarChar(50)
+  notes                  String?   @db.Text
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal          Animal           @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  breedingService BreedingService? @relation(fields: [breedingServiceId], references: [id])
+  farrowings      Farrowing[]
+  
+  @@map("pregnancies")
+}
+
+model Farrowing {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  pregnancyId          String   @map("pregnancy_id") @db.Uuid
+  motherId             String   @map("mother_id") @db.Uuid
+  farrowingDate        DateTime @map("farrowing_date") @db.Timestamp(6)
+  pigletsBornAlive     Int      @default(0) @map("piglets_born_alive")
+  pigletsBornDead      Int      @default(0) @map("piglets_born_dead")
+  pigletsMummified     Int      @default(0) @map("piglets_mummified")
+  totalLitterWeight    Decimal? @map("total_litter_weight") @db.Decimal(10, 2)
+  averagePigletWeight  Decimal? @map("average_piglet_weight") @db.Decimal(10, 2)
+  assistanceRequired   Boolean  @default(false) @map("assistance_required")
+  assistanceType       String?  @map("assistance_type") @db.VarChar(100)
+  complications        String?  @db.Text
+  attendedBy           String?  @map("attended_by") @db.Uuid
+  notes                String?  @db.Text
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pregnancy Pregnancy @relation(fields: [pregnancyId], references: [id], onDelete: Cascade)
+  mother    Animal    @relation(fields: [motherId], references: [id], onDelete: Cascade)
+  attendant User?     @relation("AttendedBy", fields: [attendedBy], references: [id])
+  weanings  Weaning[]
+  
+  @@map("farrowings")
+}
+
+model Weaning {
+  id                       String   @id @default(uuid()) @db.Uuid
+  tenantId                 String   @map("tenant_id") @db.Uuid
+  farrowingId              String   @map("farrowing_id") @db.Uuid
+  weaningDate              DateTime @map("weaning_date") @db.Date
+  pigletsWeaned            Int      @map("piglets_weaned")
+  averageWeaningWeight     Decimal? @map("average_weaning_weight") @db.Decimal(10, 2)
+  ageAtWeaningDays         Int?     @map("age_at_weaning_days")
+  mortalityDuringLactation Int      @default(0) @map("mortality_during_lactation")
+  notes                    String?  @db.Text
+  recordedBy               String?  @map("recorded_by") @db.Uuid
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  farrowing  Farrowing @relation(fields: [farrowingId], references: [id], onDelete: Cascade)
+  recorder   User?     @relation("RecordedBy", fields: [recordedBy], references: [id])
+  
+  @@map("weanings")
+}
+
+// ============================================
+// SANIDAD
+// ============================================
+
+model HealthRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  animalId        String?  @map("animal_id") @db.Uuid
+  batchId         String?  @map("batch_id") @db.Uuid
+  recordType      String   @map("record_type") @db.VarChar(50)
+  recordDate      DateTime @default(now()) @map("record_date") @db.Timestamp(6)
+  diseaseId       String?  @map("disease_id") @db.Uuid
+  symptoms        String?  @db.Text
+  diagnosis       String?  @db.Text
+  temperature     Decimal? @db.Decimal(4, 2)
+  treatmentPlan   String?  @map("treatment_plan") @db.Text
+  prognosis       String?  @db.VarChar(50)
+  veterinarianId  String?  @map("veterinarian_id") @db.Uuid
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal               Animal?               @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  batch                Batch?                @relation(fields: [batchId], references: [id])
+  disease              Disease?              @relation(fields: [diseaseId], references: [id])
+  veterinarian         User?                 @relation("Veterinarian", fields: [veterinarianId], references: [id])
+  medicationTreatments MedicationTreatment[]
+
+  @@index([animalId, recordDate])
+  @@map("health_records")
+}
+
+model Vaccination {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  animalId         String?  @map("animal_id") @db.Uuid
+  batchId          String?  @map("batch_id") @db.Uuid
+  vaccineId        String   @map("vaccine_id") @db.Uuid
+  applicationDate  DateTime @map("application_date") @db.Date
+  dosage           String?  @db.VarChar(100)
+  applicationRoute String?  @map("application_route") @db.VarChar(50)
+  batchNumber      String?  @map("batch_number") @db.VarChar(100)
+  expirationDate   DateTime? @map("expiration_date") @db.Date
+  nextDoseDate     DateTime? @map("next_dose_date") @db.Date
+  administeredBy   String?  @map("administered_by") @db.Uuid
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal        Animal? @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  batch         Batch?  @relation(fields: [batchId], references: [id])
+  vaccine       Vaccine @relation(fields: [vaccineId], references: [id])
+  administrator User?   @relation("AdministeredBy", fields: [administeredBy], references: [id])
+
+  @@map("vaccinations")
+}
+
+model MedicationTreatment {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  animalId         String?   @map("animal_id") @db.Uuid
+  batchId          String?   @map("batch_id") @db.Uuid
+  healthRecordId   String?   @map("health_record_id") @db.Uuid
+  medicationId     String    @map("medication_id") @db.Uuid
+  startDate        DateTime  @map("start_date") @db.Date
+  endDate          DateTime? @map("end_date") @db.Date
+  dosage           String?   @db.VarChar(100)
+  frequency        String?   @db.VarChar(100)
+  applicationRoute String?   @map("application_route") @db.VarChar(50)
+  withdrawalDate   DateTime? @map("withdrawal_date") @db.Date
+  administeredBy   String?   @map("administered_by") @db.Uuid
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal        Animal?       @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  batch         Batch?        @relation(fields: [batchId], references: [id])
+  healthRecord  HealthRecord? @relation(fields: [healthRecordId], references: [id])
+  medication    Medication    @relation(fields: [medicationId], references: [id])
+  administrator User?         @relation("AdministeredBy", fields: [administeredBy], references: [id])
+
+  @@map("medication_treatments")
+}
+model MortalityRecord {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  animalId          String   @map("animal_id") @db.Uuid
+  deathDate         DateTime @map("death_date") @db.Date
+  ageAtDeathDays    Int?     @map("age_at_death_days")
+  weightAtDeath     Decimal? @map("weight_at_death") @db.Decimal(10, 2)
+  deathCause        String?  @map("death_cause") @db.VarChar(255)
+  diseaseId         String?  @map("disease_id") @db.Uuid
+  necropsyPerformed Boolean  @default(false) @map("necropsy_performed")
+  necropsyFindings  String?  @map("necropsy_findings") @db.Text
+  disposalMethod    String?  @map("disposal_method") @db.VarChar(100)
+  recordedBy        String?  @map("recorded_by") @db.Uuid
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  animal  Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  disease Disease? @relation(fields: [diseaseId], references: [id])
+  recorder User?   @relation("RecordedBy", fields: [recordedBy], references: [id])
+
+  @@map("mortality_records")
+}
+// ============================================
+// ALIMENTACIÓN
+// ============================================
+model FeedType {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  code                 String   @db.VarChar(50)
+  name                 String   @db.VarChar(255)
+  category             String?  @db.VarChar(100)
+  proteinPercentage    Decimal? @map("protein_percentage") @db.Decimal(5, 2)
+  energyMcalKg         Decimal? @map("energy_mcal_kg") @db.Decimal(6, 2)
+  crudeFiberPercentage Decimal? @map("crude_fiber_percentage") @db.Decimal(5, 2)
+  formula              String?  @db.Text
+  manufacturer         String?  @db.VarChar(255)
+  costPerKg            Decimal? @map("cost_per_kg") @db.Decimal(10, 2)
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feedInventory   FeedInventory[]
+  feedMovements   FeedMovement[]
+  feedConsumption FeedConsumption[]
+
+  @@unique([tenantId, code])
+  @@map("feed_types")
+}
+model FeedInventory {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  feedTypeId        String    @map("feed_type_id") @db.Uuid
+  currentStockKg    Decimal   @default(0) @map("current_stock_kg") @db.Decimal(10, 2)
+  minimumStockKg    Decimal?  @map("minimum_stock_kg") @db.Decimal(10, 2)
+  maximumStockKg    Decimal?  @map("maximum_stock_kg") @db.Decimal(10, 2)
+  lastPurchaseDate  DateTime? @map("last_purchase_date") @db.Date
+  lastPurchasePrice Decimal?  @map("last_purchase_price") @db.Decimal(10, 2)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feedType FeedType @relation(fields: [feedTypeId], references: [id], onDelete: Cascade)
+
+  @@map("feed_inventory")
+}
+model FeedMovement {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  feedTypeId     String   @map("feed_type_id") @db.Uuid
+  movementType   String   @map("movement_type") @db.VarChar(50)
+  quantityKg     Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  movementDate   DateTime @map("movement_date") @db.Date
+  unitCost       Decimal? @map("unit_cost") @db.Decimal(10, 2)
+  totalCost      Decimal? @map("total_cost") @db.Decimal(10, 2)
+  supplier       String?  @db.VarChar(255)
+  invoiceNumber  String?  @map("invoice_number") @db.VarChar(100)
+  notes          String?  @db.Text
+  recordedBy     String?  @map("recorded_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feedType FeedType @relation(fields: [feedTypeId], references: [id], onDelete: Cascade)
+  recorder User?    @relation("RecordedBy", fields: [recordedBy], references: [id])
+
+  @@map("feed_movements")
+}
+model FeedConsumption {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  consumptionDate  DateTime @map("consumption_date") @db.Date
+  penId            String?  @map("pen_id") @db.Uuid
+  batchId          String?  @map("batch_id") @db.Uuid
+  animalId         String?  @map("animal_id") @db.Uuid
+  feedTypeId       String   @map("feed_type_id") @db.Uuid
+  quantityKg       Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  numberOfAnimals  Int?     @map("number_of_animals")
+  recordedBy       String?  @map("recorded_by") @db.Uuid
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pen      Pen?     @relation(fields: [penId], references: [id])
+  batch    Batch?   @relation(fields: [batchId], references: [id])
+  animal   Animal?  @relation(fields: [animalId], references: [id])
+  feedType FeedType @relation(fields: [feedTypeId], references: [id])
+  recorder User?    @relation("RecordedBy", fields: [recordedBy], references: [id])
+
+  @@index([tenantId, consumptionDate])
+  @@map("feed_consumption")
+}
+// ============================================
+// FINANCIERO
+// ============================================
+model TransactionCategory {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  code               String    @db.VarChar(50)
+  name               String    @db.VarChar(255)
+  type               String    @db.VarChar(50)
+  parentCategoryId   String?   @map("parent_category_id") @db.Uuid
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentCategory      TransactionCategory?   @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  childCategories     TransactionCategory[]  @relation("CategoryHierarchy")
+  financialTransactions FinancialTransaction[]
+
+  @@unique([tenantId, code])
+  @@map("transaction_categories")
+}
+model FinancialTransaction {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  transactionDate   DateTime @map("transaction_date") @db.Date
+  transactionType   String   @map("transaction_type") @db.VarChar(50)
+  categoryId        String   @map("category_id") @db.Uuid
+  amount            Decimal  @db.Decimal(12, 2)
+  currency          String   @default("USD") @db.VarChar(10)
+  description       String   @db.Text
+  animalId          String?  @map("animal_id") @db.Uuid
+  batchId           String?  @map("batch_id") @db.Uuid
+  paymentMethod     String?  @map("payment_method") @db.VarChar(50)
+  invoiceNumber     String?  @map("invoice_number") @db.VarChar(100)
+  supplierCustomer  String?  @map("supplier_customer") @db.VarChar(255)
+  notes             String?  @db.Text
+  recordedBy        String?  @map("recorded_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category TransactionCategory @relation(fields: [categoryId], references: [id])
+  animal   Animal?             @relation(fields: [animalId], references: [id])
+  batch    Batch?              @relation(fields: [batchId], references: [id])
+  recorder User?               @relation("RecordedBy", fields: [recordedBy], references: [id])
+
+  @@index([tenantId, transactionDate])
+  @@index([transactionType])
+  @@map("financial_transactions")
+}
+model AnimalSale {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  saleDate        DateTime @map("sale_date") @db.Date
+  customerName    String   @map("customer_name") @db.VarChar(255)
+  customerContact String?  @map("customer_contact") @db.VarChar(255)
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(12, 2)
+  paymentStatus   String   @default("pending") @map("payment_status") @db.VarChar(50)
+  paymentMethod   String?  @map("payment_method") @db.VarChar(50)
+  invoiceNumber   String?  @map("invoice_number") @db.VarChar(100)
+  notes           String?  @db.Text
+  recordedBy      String?  @map("recorded_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recorder          User?              @relation("RecordedBy", fields: [recordedBy], references: [id])
+  animalSaleDetails AnimalSaleDetail[]
+
+  @@map("animal_sales")
+}
+model AnimalSaleDetail {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  saleId     String   @map("sale_id") @db.Uuid
+  animalId   String   @map("animal_id") @db.Uuid
+  weightKg   Decimal? @map("weight_kg") @db.Decimal(10, 2)
+  pricePerKg Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  unitPrice  Decimal? @map("unit_price") @db.Decimal(10, 2)
+  quantity   Int      @default(1)
+  subtotal   Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sale   AnimalSale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  animal Animal     @relation(fields: [animalId], references: [id])
+
+  @@map("animal_sale_details")
+}
+// ============================================
+// TAREAS
+// ============================================
+model Task {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  title           String    @db.VarChar(255)
+  description     String?   @db.Text
+  taskType        String?   @map("task_type") @db.VarChar(100)
+  priority        String    @default("medium") @db.VarChar(50)
+  status          String    @default("pending") @db.VarChar(50)
+  assignedTo      String?   @map("assigned_to") @db.Uuid
+  dueDate         DateTime? @map("due_date") @db.Date
+  dueTime         DateTime? @map("due_time") @db.Time(6)
+  completedDate   DateTime? @map("completed_date") @db.Timestamp(6)
+  facilityId      String?   @map("facility_id") @db.Uuid
+  penId           String?   @map("pen_id") @db.Uuid
+  animalId        String?   @map("animal_id") @db.Uuid
+  batchId         String?   @map("batch_id") @db.Uuid
+  recurrenceRule  String?   @map("recurrence_rule") @db.VarChar(255)
+  notes           String?   @db.Text
+  createdBy       String?   @map("created_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignee   User?     @relation("AssignedTo", fields: [assignedTo], references: [id])
+  creator    User?     @relation("CreatedBy", fields: [createdBy], references: [id])
+  facility   Facility? @relation(fields: [facilityId], references: [id])
+  pen        Pen?      @relation(fields: [penId], references: [id])
+  animal     Animal?   @relation(fields: [animalId], references: [id])
+  batch      Batch?    @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId, status, dueDate])
+  @@index([assignedTo, status])
+  @@map("tasks")
+}
+// ============================================
+// MÉTRICAS Y REPORTES
+// ============================================
+model DailyMetric {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  metricDate         DateTime @map("metric_date") @db.Date
+  totalAnimals       Int?     @map("total_animals")
+  animalsByStage     Json?    @map("animals_by_stage")
+  birthsToday        Int?     @map("births_today")
+  deathsToday        Int?     @map("deaths_today")
+  salesToday         Int?     @map("sales_today")
+  feedConsumptionKg  Decimal? @map("feed_consumption_kg") @db.Decimal(10, 2)
+  feedCost           Decimal? @map("feed_cost") @db.Decimal(10, 2)
+  revenueToday       Decimal? @map("revenue_today") @db.Decimal(12, 2)
+  expensesToday      Decimal? @map("expenses_today") @db.Decimal(12, 2)
+  animalsTreated     Int?     @map("animals_treated")
+  vaccinationsApplied Int?    @map("vaccinations_applied")
+  calculatedAt       DateTime @default(now()) @map("calculated_at") @db.Timestamp(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, metricDate])
+  @@map("daily_metrics")
+}
+// ============================================
+// NOTIFICACIONES
+// ============================================
+model Notification {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  userId            String?   @map("user_id") @db.Uuid
+  notificationType  String    @map("notification_type") @db.VarChar(100)
+  title             String    @db.VarChar(255)
+  message           String    @db.Text
+  priority          String    @default("normal") @db.VarChar(50)
+  relatedEntityType String?   @map("related_entity_type") @db.VarChar(50)
+  relatedEntityId   String?   @map("related_entity_id") @db.Uuid
+  actionUrl         String?   @map("action_url") @db.Text
+  isRead            Boolean   @default(false) @map("is_read")
+  readAt            DateTime? @map("read_at") @db.Timestamp(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+// ============================================
+// AUDITORÍA
+// ============================================
+model AuditLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String?   @map("tenant_id") @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
+  action     String    @db.VarChar(100)
+  entityType String?   @map("entity_type") @db.VarChar(100)
+  entityId   String?   @map("entity_id") @db.Uuid
+  oldValues  Json?     @map("old_values")
+  newValues  Json?     @map("new_values")
+  ipAddress  String?   @map("ip_address") @db.Inet
+  userAgent  String?   @map("user_agent") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
