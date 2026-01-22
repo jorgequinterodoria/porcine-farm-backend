@@ -284,6 +284,7 @@ model Animal {
   geneticLine  String? @map("genetic_line") @db.VarChar(100)
   
   currentStatus String  @default("active") @map("current_status") @db.VarChar(50)
+  stage         String  @default("nursery") @map("stage") @db.VarChar(50)
   currentPenId  String? @map("current_pen_id") @db.Uuid
   entryDate     DateTime? @map("entry_date") @db.Date
   purpose       String? @db.VarChar(50)

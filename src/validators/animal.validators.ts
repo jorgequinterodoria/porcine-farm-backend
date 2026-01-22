@@ -13,6 +13,7 @@ export const createAnimalSchema = z.object({
         fatherId: z.string().uuid().optional().nullable(),
         geneticLine: z.string().max(100).optional().nullable(),
         currentStatus: z.string().max(50).default('active'),
+        stage: z.string().max(50).default('nursery'),
         currentPenId: z.string().uuid().optional().nullable(),
         entryDate: z.string().or(z.date()).optional().nullable(),
         purpose: z.string().max(50).optional().nullable(),
