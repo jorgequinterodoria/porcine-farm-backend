@@ -18,7 +18,7 @@ export const registerSchema = z.object({
             .min(8, 'Password must be at least 8 characters')
             .regex(
                 /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+                'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
             ),
 
         firstName: z
@@ -103,7 +103,7 @@ export const changePasswordSchema = z.object({
             .min(8, 'Password must be at least 8 characters')
             .regex(
                 /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+                'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
             )
     }).refine(
         (data) => data.currentPassword !== data.newPassword,
@@ -143,7 +143,7 @@ export const resetPasswordSchema = z.object({
             .min(8, 'Password must be at least 8 characters')
             .regex(
                 /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+                'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
             )
     })
 });

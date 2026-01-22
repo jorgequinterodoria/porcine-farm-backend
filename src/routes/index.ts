@@ -9,6 +9,7 @@ import reproductionRoutes from './reproduction.routes';
 import feedingRoutes from './feeding.routes';
 import financialRoutes from './financial.routes';
 import operationRoutes from './operation.routes';
+import userRoutes from './user.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/reproduction', reproductionRoutes);
 router.use('/feeding', feedingRoutes);
 router.use('/financial', financialRoutes);
 router.use('/operations', operationRoutes);
+router.use('/users', userRoutes);
 
 // Aquí irán las demás rutas
 // etc...
