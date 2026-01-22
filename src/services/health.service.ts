@@ -17,6 +17,26 @@ export class HealthService {
         return prisma.medication.findMany({ where: { isActive: true } });
     }
 
+    async updateMedication(id: string, data: Partial<CreateMedicationDTO>) {
+        const exists = await prisma.medication.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Medicamento no encontrado', 404);
+
+        return prisma.medication.update({
+            where: { id },
+            data
+        });
+    }
+
+    async deleteMedication(id: string) {
+        const exists = await prisma.medication.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Medicamento no encontrado', 404);
+
+        return prisma.medication.update({
+            where: { id },
+            data: { isActive: false }
+        });
+    }
+
     // --- Vaccines CRUD ---
     async createVaccine(data: CreateVaccineDTO) {
         return prisma.vaccine.create({ data });
@@ -26,6 +46,26 @@ export class HealthService {
         return prisma.vaccine.findMany({ where: { isActive: true } });
     }
 
+    async updateVaccine(id: string, data: Partial<CreateVaccineDTO>) {
+        const exists = await prisma.vaccine.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Vacuna no encontrada', 404);
+
+        return prisma.vaccine.update({
+            where: { id },
+            data
+        });
+    }
+
+    async deleteVaccine(id: string) {
+        const exists = await prisma.vaccine.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Vacuna no encontrada', 404);
+
+        return prisma.vaccine.update({
+            where: { id },
+            data: { isActive: false }
+        });
+    }
+
     // --- Diseases CRUD ---
     async createDisease(data: CreateDiseaseDTO) {
         return prisma.disease.create({ data });
@@ -33,6 +73,26 @@ export class HealthService {
 
     async getDiseases() {
         return prisma.disease.findMany({ where: { isActive: true } });
+    }
+
+    async updateDisease(id: string, data: Partial<CreateDiseaseDTO>) {
+        const exists = await prisma.disease.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Enfermedad no encontrada', 404);
+
+        return prisma.disease.update({
+            where: { id },
+            data
+        });
+    }
+
+    async deleteDisease(id: string) {
+        const exists = await prisma.disease.findUnique({ where: { id } });
+        if (!exists) throw new AppError('Enfermedad no encontrada', 404);
+
+        return prisma.disease.update({
+            where: { id },
+            data: { isActive: false }
+        });
     }
 
     // --- Health Records ---
