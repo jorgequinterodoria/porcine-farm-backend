@@ -8,11 +8,14 @@ export interface CreateFeedTypeDTO {
     formula?: string;
     manufacturer?: string;
     costPerKg?: number;
+    minimumStockKg?: number;
+    maximumStockKg?: number;
+    initialStockKg?: number;
 }
 
 export interface FeedMovementDTO {
     feedTypeId: string;
-    movementType: 'purchase' | 'adjustment' | 'transfer';
+    movementType: 'purchase' | 'adjustment_in' | 'adjustment_out' | 'out';
     quantityKg: number;
     movementDate: Date;
     unitCost?: number;

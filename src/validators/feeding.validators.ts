@@ -8,18 +8,27 @@ export const createFeedTypeSchema = z.object({
         name: z.string().min(1).max(255),
         category: z.string().optional(),
         proteinPercentage: z.number().min(0).max(100).optional(),
+        energyMcalKg: z.number().min(0).optional(),
+        crudeFiberPercentage: z.number().min(0).max(100).optional(),
+        formula: z.string().optional(),
+        manufacturer: z.string().optional(),
         costPerKg: z.number().positive().optional(),
+        minimumStockKg: z.number().min(0).optional(),
+        maximumStockKg: z.number().min(0).optional(),
+        initialStockKg: z.number().min(0).optional(),
     })
 });
 
 export const createFeedMovementSchema = z.object({
     body: z.object({
         feedTypeId: z.string().uuid(),
-        movementType: z.enum(['purchase', 'adjustment', 'transfer']),
+        movementType: z.enum(['purchase', 'adjustment_in', 'adjustment_out', 'out']),
         quantityKg: z.number().positive(),
         movementDate: dateSchema,
         unitCost: z.number().positive().optional(),
         supplier: z.string().optional(),
+        invoiceNumber: z.string().optional(),
+        notes: z.string().optional(),
     })
 });
 
