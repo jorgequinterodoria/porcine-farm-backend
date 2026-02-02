@@ -108,11 +108,30 @@ export class HealthService {
             if (!batch) throw new AppError('Batch not found', 404);
         }
 
-        return prisma.healthRecord.create({
-            data: {
-                ...data,
-                tenantId
+        const { treatments, ...recordData } = data;
+
+        return prisma.$transaction(async (tx) => {
+            const record = await tx.healthRecord.create({
+                data: {
+                    ...recordData,
+                    tenantId
+                }
+            });
+
+            if (treatments && treatments.length > 0) {
+                await tx.medicationTreatment.createMany({
+                    data: treatments.map(t => ({
+                        ...t,
+                        tenantId,
+                        healthRecordId: record.id,
+                        animalId: recordData.animalId,
+                        batchId: recordData.batchId,
+                        administeredBy: t.administeredBy // Or use veterinarianId as default?
+                    }))
+                });
             }
+
+            return record;
         });
     }
 

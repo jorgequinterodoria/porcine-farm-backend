@@ -33,6 +33,18 @@ export interface CreateDiseaseDTO {
     isZoonotic?: boolean;
 }
 
+export interface CreateMedicationTreatmentDTO {
+    medicationId: string;
+    startDate: Date;
+    endDate?: Date;
+    dosage?: string;
+    frequency?: string;
+    applicationRoute?: string;
+    withdrawalDate?: Date;
+    administeredBy?: string;
+    notes?: string;
+}
+
 export interface CreateHealthRecordDTO {
     animalId?: string;
     batchId?: string;
@@ -46,19 +58,5 @@ export interface CreateHealthRecordDTO {
     prognosis?: string;
     veterinarianId?: string;
     notes?: string;
-}
-
-export interface CreateMedicationTreatmentDTO {
-    animalId?: string;
-    batchId?: string;
-    healthRecordId?: string;
-    medicationId: string;
-    startDate: Date;
-    endDate?: Date;
-    dosage?: string;
-    frequency?: string;
-    applicationRoute?: string;
-    withdrawalDate?: Date;
-    administeredBy?: string;
-    notes?: string;
+    treatments?: CreateMedicationTreatmentDTO[];
 }
