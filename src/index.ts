@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler.middleware';
 import { sanitizeInput } from './middlewares/sanitize.middleware';
@@ -20,11 +21,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeInput);
 
+// Serve static files
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Routes
 app.use('/api', routes);
 
 // Swagger Documentation
-setupSwagger(app);
+if (process.env.NODE_ENV !== 'production') {
+  setupSwagger(app);
+}
 
 // Health check
 app.get('/health', (req, res) => {

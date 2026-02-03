@@ -1,0 +1,2869 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Granja Multitenant API",
+    "version": "1.0.0",
+    "description": "API completa para sistema de gestión granícola multi-tenant",
+    "contact": {
+      "name": "API Support",
+      "email": "api@granja.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtenido del login"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "required": [
+          "email",
+          "firstName",
+          "lastName"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único del usuario"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Correo electrónico del usuario"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Nombre del usuario"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Apellido del usuario"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "super_admin",
+              "farm_admin",
+              "operator"
+            ],
+            "description": "Rol del usuario en el sistema"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID del tenant al que pertenece"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Estado del usuario"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creación"
+          }
+        }
+      },
+      "Tenant": {
+        "type": "object",
+        "required": [
+          "name",
+          "subdomain"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único del tenant"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la organización/granja"
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "Subdominio único para la organización"
+          },
+          "plan": {
+            "type": "string",
+            "enum": [
+              "free",
+              "basic",
+              "premium",
+              "enterprise"
+            ],
+            "description": "Plan de suscripción"
+          },
+          "maxUsers": {
+            "type": "integer",
+            "description": "Número máximo de usuarios permitidos"
+          },
+          "maxAnimals": {
+            "type": "integer",
+            "description": "Número máximo de animales permitidos"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Estado del tenant"
+          }
+        }
+      },
+      "Animal": {
+        "type": "object",
+        "required": [
+          "internalCode",
+          "sex",
+          "birthDate"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único del animal"
+          },
+          "internalCode": {
+            "type": "string",
+            "description": "Código interno único del animal"
+          },
+          "identificationNumber": {
+            "type": "string",
+            "description": "Número de identificación oficial"
+          },
+          "electronicId": {
+            "type": "string",
+            "description": "ID del chip electrónico"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female"
+            ],
+            "description": "Sexo del animal"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de nacimiento"
+          },
+          "birthWeight": {
+            "type": "number",
+            "description": "Peso al nacer (kg)"
+          },
+          "currentWeight": {
+            "type": "number",
+            "description": "Peso actual (kg)"
+          },
+          "currentStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "sold",
+              "deceased",
+              "quarantine",
+              "sick"
+            ],
+            "description": "Estado actual del animal"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "piglet",
+              "nursery",
+              "fattening",
+              "breeding"
+            ],
+            "description": "Etapa productiva"
+          },
+          "breed": {
+            "type": "string",
+            "description": "Raza del animal"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID del tenant propietario"
+          },
+          "currentPenId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID del corral actual"
+          }
+        }
+      },
+      "Facility": {
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "capacity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único de la instalación"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la instalación"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "breeding",
+              "fattening",
+              "nursery",
+              "quarantine",
+              "slaughter"
+            ],
+            "description": "Tipo de instalación"
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Capacidad máxima de animales"
+          },
+          "currentOccupancy": {
+            "type": "integer",
+            "description": "Ocupación actual"
+          },
+          "address": {
+            "type": "string",
+            "description": "Dirección de la instalación"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de error interno"
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Datos de respuesta"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje de éxito"
+          }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Array de datos"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "description": "Número de página actual"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Elementos por página"
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total de elementos"
+              },
+              "totalPages": {
+                "type": "integer",
+                "description": "Total de páginas"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/sync/pull": {
+      "get": {
+        "summary": "Retrieve incremental changes for offline sync",
+        "tags": [
+          "Sync"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lastSyncAt",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Timestamp of the last successful sync"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of changes by model"
+          }
+        }
+      }
+    },
+    "/sync/push": {
+      "post": {
+        "summary": "Push offline changes to server",
+        "tags": [
+          "Sync"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "changes": {
+                    "type": "object",
+                    "description": "Map of model names to array of records"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Result of sync operation"
+          }
+        }
+      }
+    },
+    "/animals": {
+      "post": {
+        "summary": "Create a new animal",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Animal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Animal created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all animals",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                "active",
+                "sold",
+                "deceased",
+                "quarantine",
+                "sick"
+              ]
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "format": "uuid"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Número de página"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Límite de resultados por página"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of animals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/animals/{id}": {
+      "get": {
+        "summary": "Get animal by ID",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID del animal"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Animal details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Animal"
+                        }
+                      }
+                    }
+                  ],
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update animal details",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID del animal a actualizar"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "internalCode": {
+                    "type": "string",
+                    "description": "Código interno del animal"
+                  },
+                  "sex": {
+                    "type": "string",
+                    "enum": [
+                      "male",
+                      "female"
+                    ],
+                    "description": "Sexo del animal"
+                  },
+                  "currentStatus": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "sold",
+                      "deceased",
+                      "quarantine",
+                      "sick"
+                    ],
+                    "description": "Estado actual del animal"
+                  }
+                },
+                "$ref": "#/components/schemas/Animal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Animal updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an animal (Soft delete)",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID del animal a eliminar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Animal deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/animals/{id}/weight": {
+      "post": {
+        "summary": "Record animal weight",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID del animal"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "weight",
+                  "date"
+                ],
+                "properties": {
+                  "weightKg": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Peso en kilogramos"
+                  },
+                  "measurementDate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Fecha de medición"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Notas adicionales"
+                  },
+                  "weight": {
+                    "type": "number"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Weight recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/animals/{id}/movement": {
+      "post": {
+        "summary": "Move animal to another pen",
+        "tags": [
+          "Animals"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID del animal"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "destinationPenId",
+                  "date"
+                ],
+                "properties": {
+                  "movementType": {
+                    "type": "string",
+                    "enum": [
+                      "transfer",
+                      "sale",
+                      "death",
+                      "medical"
+                    ],
+                    "description": "Tipo de movimiento"
+                  },
+                  "fromPenId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID del corral de origen"
+                  },
+                  "toPenId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID del corral de destino"
+                  },
+                  "movementDate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Fecha del movimiento"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Razón del movimiento"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Notas adicionales"
+                  },
+                  "destinationPenId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Movement recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Animal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user and tenant",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "firstName",
+                  "lastName",
+                  "farmName"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "farmName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User login",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "user": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "summary": "Get authenticated user profile",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user profile",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "summary": "Change password",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Request password reset",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset email sent"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Reset password with token",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "password"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful"
+          }
+        }
+      }
+    },
+    "/auth/invite": {
+      "post": {
+        "summary": "Invite a user (Admin only)",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "role"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "farm_admin",
+                      "operator"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invitation sent"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout user",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/batches": {
+      "post": {
+        "summary": "Create a new batch",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "name"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Batch created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all batches",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of batches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batches/{id}": {
+      "get": {
+        "summary": "Get batch by ID",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update batch details",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batches/{id}/animals": {
+      "post": {
+        "summary": "Add an animal to the batch",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "animalId"
+                ],
+                "properties": {
+                  "animalId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Animal added to batch successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove an animal from the batch",
+        "tags": [
+          "Batches"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "animalId"
+                ],
+                "properties": {
+                  "animalId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Animal removed from batch successfully"
+          }
+        }
+      }
+    },
+    "/feeding/types": {
+      "post": {
+        "summary": "Create a new feed type",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "nutritionalInfo": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Feed type created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all feed types",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of feed types"
+          }
+        }
+      }
+    },
+    "/feeding/types/{id}": {
+      "put": {
+        "summary": "Update a feed type",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feed type updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a feed type",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feed type deleted"
+          }
+        }
+      }
+    },
+    "/feeding/inventory/movement": {
+      "post": {
+        "summary": "Add inventory movement (In/Out)",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "feedTypeId",
+                  "quantity",
+                  "type"
+                ],
+                "properties": {
+                  "feedTypeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "IN",
+                      "OUT"
+                    ]
+                  },
+                  "cost": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Inventory movement recorded"
+          }
+        }
+      }
+    },
+    "/feeding/consumption": {
+      "post": {
+        "summary": "Register feed consumption",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "batchId",
+                  "feedTypeId",
+                  "quantity"
+                ],
+                "properties": {
+                  "batchId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "feedTypeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consumption registered"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get consumption history",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consumption history"
+          }
+        }
+      }
+    },
+    "/feeding/alerts/low-stock": {
+      "get": {
+        "summary": "Get low stock alerts",
+        "tags": [
+          "Feeding"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of low stock items"
+          }
+        }
+      }
+    },
+    "/financial/categories": {
+      "post": {
+        "summary": "Create a financial category",
+        "tags": [
+          "Financial"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "income",
+                      "expense"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all financial categories",
+        "tags": [
+          "Financial"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of categories"
+          }
+        }
+      }
+    },
+    "/financial/transactions": {
+      "post": {
+        "summary": "Create a transaction",
+        "tags": [
+          "Financial"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "categoryId",
+                  "amount",
+                  "date",
+                  "type"
+                ],
+                "properties": {
+                  "categoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "income",
+                      "expense"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get transactions",
+        "tags": [
+          "Financial"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of transactions"
+          }
+        }
+      }
+    },
+    "/financial/sales": {
+      "post": {
+        "summary": "Register an animal sale",
+        "tags": [
+          "Financial"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "clientName",
+                  "saleDate",
+                  "animals"
+                ],
+                "properties": {
+                  "clientName": {
+                    "type": "string"
+                  },
+                  "saleDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "animals": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "animalId",
+                        "weight",
+                        "pricePerKg"
+                      ],
+                      "properties": {
+                        "animalId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "weight": {
+                          "type": "number"
+                        },
+                        "pricePerKg": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sale registered"
+          }
+        }
+      }
+    },
+    "/health/medications": {
+      "get": {
+        "summary": "Get all medications",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of medications"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new medication",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "commercialName"
+                ],
+                "properties": {
+                  "commercialName": {
+                    "type": "string"
+                  },
+                  "activeIngredient": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Medication created"
+          }
+        }
+      }
+    },
+    "/health/medications/{id}": {
+      "put": {
+        "summary": "Update a medication",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commercialName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Medication updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a medication",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medication deleted"
+          }
+        }
+      }
+    },
+    "/health/vaccines": {
+      "get": {
+        "summary": "Get all vaccines",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vaccines"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new vaccine",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Vaccine created"
+          }
+        }
+      }
+    },
+    "/health/vaccines/{id}": {
+      "put": {
+        "summary": "Update a vaccine",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vaccine updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a vaccine",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vaccine deleted"
+          }
+        }
+      }
+    },
+    "/health/diseases": {
+      "get": {
+        "summary": "Get all diseases",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of diseases"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new disease",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "code"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Disease created"
+          }
+        }
+      }
+    },
+    "/health/diseases/{id}": {
+      "put": {
+        "summary": "Update a disease",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Disease updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a disease",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Disease deleted"
+          }
+        }
+      }
+    },
+    "/health/records": {
+      "post": {
+        "summary": "Create a health record",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "recordDate",
+                  "type"
+                ],
+                "properties": {
+                  "recordDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Health record created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get health records",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of health records"
+          }
+        }
+      }
+    },
+    "/health/records/{id}": {
+      "get": {
+        "summary": "Get a specific health record",
+        "tags": [
+          "Health"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health record details"
+          }
+        }
+      }
+    },
+    "/infrastructure/facilities": {
+      "post": {
+        "summary": "Create a new facility",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Facility"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Facility created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all facilities",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of facilities"
+          }
+        }
+      }
+    },
+    "/infrastructure/facilities/{id}": {
+      "get": {
+        "summary": "Get facility by ID",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facility details"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update facility",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Facility"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Facility updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete facility",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facility deleted"
+          }
+        }
+      }
+    },
+    "/infrastructure/pens": {
+      "post": {
+        "summary": "Create a new pen",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "facilityId",
+                  "name",
+                  "code",
+                  "capacity"
+                ],
+                "properties": {
+                  "facilityId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "capacity": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pen created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all pens",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "facilityId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pens"
+          }
+        }
+      }
+    },
+    "/infrastructure/pens/{id}": {
+      "get": {
+        "summary": "Get pen by ID",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pen details"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update pen",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "capacity": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pen updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete pen",
+        "tags": [
+          "Infrastructure"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pen deleted"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}
