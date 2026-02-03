@@ -21,7 +21,7 @@ const options = {
     servers: [
       {
         url: process.env.NODE_ENV === 'production' 
-          ? 'https://api.granja.com' 
+          ? 'https://porcine-farm-backend.vercel.app' 
           : 'http://localhost:3000',
         description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
