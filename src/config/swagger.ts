@@ -296,11 +296,15 @@ const options = {
     apis: [
       './src/routes/*.ts', // Path to the API routes
       './src/controllers/*.ts', // Path to the API controllers
+      './dist/routes/*.js',
+      './dist/controllers/*.js',
     ],
   },
   apis: [
     './src/routes/*.ts',
     './src/controllers/*.ts',
+    './dist/routes/*.js',
+    './dist/controllers/*.js',
   ],
 };
 
