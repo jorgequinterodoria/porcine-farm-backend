@@ -17,7 +17,12 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:backend": "npm run test",
+    "test:frontend": "cd porcine-farm-frontend && npm run test",
+    "test:e2e": "npm run test:e2e",
+    "test:performance": "npm run test:performance",
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e"
   },
   "keywords": [],
   "author": "",
@@ -45,13 +50,22 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "bcrypt": "^6.0.0",
+    "cache-manager": "^7.2.8",
+    "cache-manager-redis-store": "^3.0.1",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "ioredis": "^5.9.2",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.17.2",
+    "rate-limit-redis": "^4.3.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
     "zod": "^4.3.5"
   }
