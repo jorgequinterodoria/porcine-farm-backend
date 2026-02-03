@@ -313,6 +313,7 @@ export const setupSwagger = (app: Application): void => {
   const specs = swaggerJsdoc(options);
 
   // Servir documentación API
+  // @ts-ignore
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
     explorer: true,
     customCss: `
@@ -325,8 +326,13 @@ export const setupSwagger = (app: Application): void => {
       }
     `,
     customSiteTitle: 'Granja API Documentation',
-    customJs: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
-    customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js',
+    ],
+    customCssUrl: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+    ],
   }));
 
   // Servir especificación JSON
