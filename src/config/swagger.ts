@@ -1,5 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+import { apiReference } from '@scalar/express-api-reference';
 import { Application } from 'express';
 
 export const options = {
@@ -310,28 +310,16 @@ export const setupSwagger = (app: Application): void => {
   // Generar especificación Swagger
   const specs = swaggerJsdoc(options);
 
-  // Servir documentación API
-  // @ts-ignore
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
-    explorer: true,
-    customCss: `
-      .swagger-ui .topbar { 
-        background-color: #4f46e5; 
-        border-bottom: 1px solid #4338ca; 
-      }
-      .swagger-ui .topbar .download-url-wrapper .select-label {
-        color: #fff;
-      }
-    `,
-    customSiteTitle: 'Granja API Documentation',
-    customJs: [
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js',
-    ],
-    customCssUrl: [
-      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
-    ],
-  }));
+  // Servir documentación API con Scalar
+  app.use(
+    '/api-docs',
+    apiReference({
+      theme: 'deepSpace',
+      spec: {
+        content: specs,
+      },
+    })
+  );
 
   // Servir especificación JSON
   app.get('/api-docs.json', (req, res) => {
