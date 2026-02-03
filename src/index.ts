@@ -29,7 +29,9 @@ app.use('/api', routes);
 
 // Swagger Documentation
 if (process.env.NODE_ENV !== 'production') {
-  setupSwagger(app);
+  setupSwagger(app).catch(err => {
+    console.error('Failed to setup Swagger:', err);
+  });
 }
 
 // Health check

@@ -1,5 +1,4 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { apiReference } from '@scalar/express-api-reference';
 import { Application } from 'express';
 
 export const options = {
@@ -306,9 +305,12 @@ export const options = {
  * Configura Swagger UI para la aplicación
  * @param app Instancia de Express
  */
-export const setupSwagger = (app: Application): void => {
+export const setupSwagger = async (app: Application): Promise<void> => {
   // Generar especificación Swagger
   const specs = swaggerJsdoc(options);
+
+  // Importar dinámicamente @scalar/express-api-reference
+  const { apiReference } = await import('@scalar/express-api-reference');
 
   // Servir documentación API con Scalar
   app.use(
