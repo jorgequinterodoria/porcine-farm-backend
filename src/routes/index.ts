@@ -10,6 +10,7 @@ import feedingRoutes from './feeding.routes';
 import financialRoutes from './financial.routes';
 import operationRoutes from './operation.routes';
 import userRoutes from './user.routes';
+import syncRoutes from './sync.routes';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/feeding', feedingRoutes);
 router.use('/financial', financialRoutes);
 router.use('/operations', operationRoutes);
 router.use('/users', userRoutes);
+router.use('/sync', syncRoutes);
 
 // Aquí irán las demás rutas
 // etc...

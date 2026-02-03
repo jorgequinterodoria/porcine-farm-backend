@@ -13,9 +13,9 @@ export class CacheService {
   constructor() {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
+      port: parseInt(process.env.REDIS_PORT || '6379') || 6379,
       password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
+      db: parseInt(process.env.REDIS_DB || '0') || 0,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });

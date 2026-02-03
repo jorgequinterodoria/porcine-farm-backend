@@ -6,6 +6,7 @@ import cors from 'cors';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler.middleware';
 import { sanitizeInput } from './middlewares/sanitize.middleware';
+import { setupSwagger } from './config/swagger';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,9 @@ app.use(sanitizeInput);
 
 // Routes
 app.use('/api', routes);
+
+// Swagger Documentation
+setupSwagger(app);
 
 // Health check
 app.get('/health', (req, res) => {
