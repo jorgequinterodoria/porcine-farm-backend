@@ -323,13 +323,10 @@ export const setupSwagger = (app: Application): void => {
       .swagger-ui .topbar .download-url-wrapper .select-label {
         color: #fff;
       }
-      .topbar-wrapper img {
-        content: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzRmNDZlNSIvPgo8cGF0aCBkPSJNOCA4SDI4VjI0SDRWOEg0VjhaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=");
-        height: 32px;
-        width: 32px;
-      }
     `,
     customSiteTitle: 'Granja API Documentation',
+    customJs: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
+    customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
   }));
 
   // Servir especificación JSON
