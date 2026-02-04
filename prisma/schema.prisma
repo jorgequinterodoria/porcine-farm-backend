@@ -849,6 +849,7 @@ model Task {
   createdBy       String?   @map("created_by") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamp(6)
 
   tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignee   User?     @relation("AssignedTo", fields: [assignedTo], references: [id])

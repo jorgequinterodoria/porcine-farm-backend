@@ -2,44 +2,33 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 
-// Define the models that should be synchronized
-const SYNC_MODELS = [
-  'Animal',
-  'Task',
-  'FeedConsumption',
-  'HealthRecord',
-  'AnimalMovement',
-  'WeightRecord',
-  'BreedingService',
-  'Pregnancy',
-  'Farrowing',
-  'Weaning',
-  'Vaccination',
-  'MedicationTreatment',
-  'MortalityRecord',
-  'FeedInventory',
-  'FeedMovement',
-  'FinancialTransaction',
-  'AnimalSale',
-  'AnimalSaleDetail',
-  'Facility',
-  'Pen',
-  'FeedType',
-  'Medication',
-  'Vaccine',
-  'Disease',
-  'TransactionCategory'
-];
+// Mapping between Prisma Models and WatermelonDB Tables
+// Key: Prisma Model Name, Value: WatermelonDB Table Name
+const MODEL_TO_TABLE: Record<string, string> = {
+  'Animal': 'animals',
+  'Task': 'tasks',
+  'FeedConsumption': 'feed_consumption',
+  // Add other mappings as you implement them in the frontend schema
+  // 'HealthRecord': 'health_records',
+  // 'Facility': 'facilities',
+  // 'Pen': 'pens',
+};
+
+// Reverse mapping for Push
+const TABLE_TO_MODEL: Record<string, string> = Object.entries(MODEL_TO_TABLE).reduce((acc, [model, table]) => {
+  acc[table] = model;
+  return acc;
+}, {} as Record<string, string>);
 
 export class SyncService {
   /**
    * Retrieve changes since the last sync
    */
   async getChanges(tenantId: string, lastSyncAt: Date | null) {
-    const changes: Record<string, any[]> = {};
+    const changes: Record<string, { created: any[], updated: any[], deleted: string[] }> = {};
     const timestamp = lastSyncAt || new Date(0); // If null, get all (initial sync)
 
-    for (const modelName of SYNC_MODELS) {
+    for (const [modelName, tableName] of Object.entries(MODEL_TO_TABLE)) {
       // @ts-ignore - Dynamic access to prisma models
       const model = prisma[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
       
@@ -48,90 +37,166 @@ export class SyncService {
         continue;
       }
 
-      // Find records updated or deleted since lastSyncAt
-      // Note: deleted records should be handled if we use Soft Delete (deletedAt field)
-      // If we hard delete, we need a separate "DeletedLog" table to track deletions for sync.
-      // Current schema has 'deletedAt' for Soft Delete support on most tables.
+      changes[tableName] = { created: [], updated: [], deleted: [] };
       
       try {
+        // 1. Fetch created/updated records
+        // We look for records updated OR created after the timestamp
+        // Ideally, we distinguish created vs updated based on createdAt
         const records = await model.findMany({
           where: {
             tenantId: tenantId,
-            updatedAt: {
-              gt: timestamp
-            }
+            updatedAt: { gt: timestamp },
+            deletedAt: null // Only active records
           }
         });
-        
-        if (records.length > 0) {
-          changes[modelName] = records;
+
+        for (const record of records) {
+          // Convert Date objects to timestamps (number) for WatermelonDB
+          const recordForClient = this.formatRecordForClient(record);
+          
+          if (record.createdAt > timestamp) {
+            changes[tableName].created.push(recordForClient);
+          } else {
+            changes[tableName].updated.push(recordForClient);
+          }
         }
+
+        // 2. Fetch deleted records
+        // We need Soft Delete logic here. 
+        // Assuming models have deletedAt field.
+        const deletedRecords = await model.findMany({
+          where: {
+            tenantId: tenantId,
+            deletedAt: { gt: timestamp }
+          },
+          select: { id: true }
+        });
+
+        changes[tableName].deleted = deletedRecords.map((r: any) => r.id);
+
       } catch (error: any) {
-        // Some models might not have tenantId (e.g. shared catalogs if any), but here most have it.
-        // Also handle models without updatedAt if any remained (but we fixed them).
         console.error(`Error fetching changes for ${modelName}:`, error);
       }
     }
 
     return {
-      timestamp: new Date(),
-      changes
+      changes,
+      timestamp: new Date().getTime(), // Return current server time as timestamp
     };
   }
 
   /**
    * Process changes pushed from the client
    */
-  async processChanges(tenantId: string, payload: { changes: Record<string, any[]> }) {
+  async processChanges(tenantId: string, payload: { changes: Record<string, { created: any[], updated: any[], deleted: string[] }> }) {
     const results: Record<string, { success: number; errors: any[] }> = {};
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (const [modelName, records] of Object.entries(payload.changes)) {
+      for (const [tableName, changeSet] of Object.entries(payload.changes)) {
+        const modelName = TABLE_TO_MODEL[tableName];
+        if (!modelName) continue; // Skip unknown tables
+
         // @ts-ignore
         const model = tx[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
         if (!model) continue;
 
-        results[modelName] = { success: 0, errors: [] };
+        results[tableName] = { success: 0, errors: [] };
 
-        for (const record of records) {
-          try {
-            // Optimistic locking or "Last Write Wins" strategy
-            // We assume the client sends the full record including 'id'
-            
-            // If the record has a temporary ID (from client), we might need to handle ID mapping.
-            // But usually offline-first apps use UUIDs generated on client, so IDs match.
-            
-            const { id, ...data } = record;
-            
-            // Ensure tenantId security
-            if (data.tenantId && data.tenantId !== tenantId) {
-              throw new Error('Security violation: Tenant ID mismatch');
+        // 1. Handle Created Records
+        if (changeSet.created && Array.isArray(changeSet.created)) {
+            for (const record of changeSet.created) {
+                await this.applyChange(model, record, 'create', tenantId, results[tableName]);
             }
-            data.tenantId = tenantId;
+        }
 
-            // Remove timestamps managed by server if present in payload (optional, depending on trust)
-            // But we want to respect client's updatedAt if it's newer? 
-            // For simplicity: Server overwrite updatedAt.
-            delete data.updatedAt;
-            delete data.createdAt; 
+        // 2. Handle Updated Records
+        if (changeSet.updated && Array.isArray(changeSet.updated)) {
+            for (const record of changeSet.updated) {
+                await this.applyChange(model, record, 'update', tenantId, results[tableName]);
+            }
+        }
 
-            // Upsert: Update if exists, Create if not
-            await model.upsert({
-              where: { id },
-              update: data,
-              create: { id, ...data }
-            });
-
-            results[modelName].success++;
-          } catch (error: any) {
-            console.error(`Error processing ${modelName} record ${record.id}:`, error);
-            results[modelName].errors.push({ id: record.id, error: error.message });
-          }
+        // 3. Handle Deleted Records
+        if (changeSet.deleted && Array.isArray(changeSet.deleted)) {
+            for (const id of changeSet.deleted) {
+                try {
+                    // Soft delete
+                    await model.update({
+                        where: { id },
+                        data: { deletedAt: new Date() }
+                    });
+                    results[tableName].success++;
+                } catch (error: any) {
+                    console.error(`Error deleting ${modelName} record ${id}:`, error);
+                    results[tableName].errors.push({ id, error: error.message });
+                }
+            }
         }
       }
     });
 
     return results;
+  }
+
+  private async applyChange(model: any, record: any, type: 'create' | 'update', tenantId: string, result: { success: number; errors: any[] }): Promise<void> {
+      try {
+        const { id, ...data } = record;
+        
+        // Ensure tenantId security
+        // If client sends tenantId, verify it. If not, inject it.
+        if (data.tenantId && data.tenantId !== tenantId) {
+            throw new Error('Security violation: Tenant ID mismatch');
+        }
+        data.tenantId = tenantId;
+
+        // Convert timestamps from number (WatermelonDB) to Date (Prisma)
+        this.formatRecordForServer(data);
+
+        // Remove system fields if present
+        delete data._status;
+        delete data._changed;
+
+        if (type === 'create') {
+            await model.create({
+                data: { id, ...data }
+            });
+        } else {
+            await model.update({
+                where: { id },
+                data: data
+            });
+        }
+        result.success++;
+      } catch (error: any) {
+          // If create fails because it exists, try update (idempotency)
+          if (type === 'create' && error.code === 'P2002') {
+             return this.applyChange(model, record, 'update', tenantId, result);
+          }
+          console.error(`Error applying ${type} for record ${record.id}:`, error);
+          result.errors.push({ id: record.id, error: error.message });
+      }
+  }
+
+  private formatRecordForClient(record: any) {
+      const result = { ...record };
+      // Convert Date objects to unix timestamps (ms)
+      for (const key in result) {
+          if (result[key] instanceof Date) {
+              result[key] = result[key].getTime();
+          }
+      }
+      return result;
+  }
+
+  private formatRecordForServer(record: any) {
+      // Convert timestamps fields ending in 'At' or 'Date' from number to Date
+      // This is a heuristic, might need strict schema mapping
+      for (const key in record) {
+          if ((key.endsWith('At') || key.endsWith('Date') || key === 'date') && typeof record[key] === 'number') {
+              record[key] = new Date(record[key]);
+          }
+      }
   }
 }
 
