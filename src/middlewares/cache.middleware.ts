@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { cacheService } from '../config/cache';
 
 interface CacheOptions {
-  ttl?: number; // Time to live in seconds
+  ttl?: number; 
   keyGenerator?: (req: Request) => string;
-  condition?: (req: Request) => boolean; // Cache condition
-  skipCache?: (req: Request) => boolean; // Skip cache condition
+  condition?: (req: Request) => boolean; 
+  skipCache?: (req: Request) => boolean; 
 }
 
 interface CachedResponse {
@@ -15,20 +15,20 @@ interface CachedResponse {
   timestamp: string;
 }
 
-/**
- * Cache middleware for GET requests
- * Usage: app.get('/api/animals', cacheMiddleware({ ttl: 300 }), getAnimalsHandler);
- */
+
+
+
+
 export const cacheMiddleware = (options: CacheOptions = {}) => {
   const {
-    ttl = 300, // 5 minutes default
+    ttl = 300, 
     keyGenerator = (req) => `cache:${req.method}:${req.originalUrl}:${req.user?.tenantId || 'anonymous'}`,
-    condition = (req) => req.method === 'GET', // Only cache GET requests by default
+    condition = (req) => req.method === 'GET', 
     skipCache = (req) => false,
   } = options;
 
   return async (req: Request, res: Response, next: NextFunction) => {
-    // Skip caching based on conditions
+    
     if (!condition(req) || skipCache(req)) {
       return next();
     }
@@ -36,16 +36,16 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
     const cacheKey = keyGenerator(req);
 
     try {
-      // Try to get from cache
+      
       const cachedResponse = await cacheService.get<CachedResponse>(cacheKey);
       
       if (cachedResponse && typeof cachedResponse === 'object') {
-        // Return cached response
+        
         res.set(cachedResponse.headers);
         return res.status(cachedResponse.statusCode).json(cachedResponse.data);
       }
 
-      // Intercept response to cache it
+      
       const originalJson = res.json;
       const originalStatus = res.status;
       let statusCode = 200;
@@ -61,9 +61,9 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
         return originalStatus.call(this, code);
       };
 
-      // Cache the response after it's sent
+      
       res.on('finish', async () => {
-        // Only cache successful responses
+        
         if (statusCode >= 200 && statusCode < 300 && responseData) {
           const cacheData: CachedResponse = {
             statusCode,
@@ -79,20 +79,20 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
       next();
     } catch (error) {
       console.error('Cache middleware error:', error);
-      next(); // Continue without caching if there's an error
+      next(); 
     }
   };
 };
 
-/**
- * Tenant-specific cache invalidation middleware
- */
+
+
+
 export const invalidateTenantCache = (patterns: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const tenantId = req.user?.tenantId;
     
     if (tenantId) {
-      // Invalidate cache patterns after the request completes
+      
       res.on('finish', async () => {
         for (const pattern of patterns) {
           const fullPattern = pattern.replace(':tenantId', tenantId);
@@ -105,9 +105,9 @@ export const invalidateTenantCache = (patterns: string[]) => {
   };
 };
 
-/**
- * Cache warming middleware for frequently accessed data
- */
+
+
+
 export const warmupCache = async (
   warmupFunctions: Array<{
     key: string;
@@ -129,9 +129,9 @@ export const warmupCache = async (
   }
 };
 
-/**
- * Cache statistics middleware
- */
+
+
+
 export const cacheStats = (req: Request, res: Response, next: NextFunction) => {
   if (req.path === '/health/cache') {
     return cacheService.getStats()

@@ -3,7 +3,7 @@ import { asyncHandler } from '../middlewares/errorHandler.middleware';
 import { healthService } from '../services/health.service';
 
 export class HealthController {
-    // --- Medications ---
+    
     /**
      * @swagger
      * /health/medications:
@@ -107,7 +107,7 @@ export class HealthController {
         res.status(200).json({ success: true, message: 'Medicamento eliminado correctamente' });
     });
 
-    // --- Vaccines ---
+    
     /**
      * @swagger
      * /health/vaccines:
@@ -209,7 +209,7 @@ export class HealthController {
         res.status(200).json({ success: true, message: 'Vacuna eliminada correctamente' });
     });
 
-    // --- Diseases ---
+    
     /**
      * @swagger
      * /health/diseases:
@@ -313,7 +313,7 @@ export class HealthController {
         res.status(200).json({ success: true, message: 'Enfermedad eliminada correctamente' });
     });
 
-    // --- Health Records ---
+    
     /**
      * @swagger
      * /health/records:

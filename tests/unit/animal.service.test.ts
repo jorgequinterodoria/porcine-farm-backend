@@ -2,7 +2,7 @@ import { AnimalService } from '../../../src/services/animal.service';
 import { prisma } from '../../../src/config/database';
 import { AppError } from '../../../src/middlewares/errorHandler.middleware';
 
-// Mock dependencies
+
 jest.mock('../../../src/config/database', () => ({
   prisma: {
     animal: {

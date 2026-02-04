@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-// Test data factory for creating realistic test data
+
 export class TestDataFactory {
   private prisma: PrismaClient;
 
@@ -15,9 +15,9 @@ export class TestDataFactory {
     });
   }
 
-  // Clean all test data
+  
   async cleanup() {
-    // Delete in order respecting foreign key constraints
+    
     const tablenames = await this.prisma.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables WHERE schemaname='public'
     `;
@@ -33,7 +33,7 @@ export class TestDataFactory {
     }
   }
 
-  // Create test tenant
+  
   async createTenant(overrides: Partial<any> = {}) {
     return await this.prisma.tenant.create({
       data: {
@@ -50,7 +50,7 @@ export class TestDataFactory {
     });
   }
 
-  // Create test user
+  
   async createUser(tenantId: string, overrides: Partial<any> = {}) {
     const hashedPassword = await bcrypt.hash('password123', 10);
     
@@ -69,7 +69,7 @@ export class TestDataFactory {
     });
   }
 
-  // Create test facility
+  
   async createFacility(tenantId: string, overrides: Partial<any> = {}) {
     return await this.prisma.facility.create({
       data: {
@@ -84,7 +84,7 @@ export class TestDataFactory {
     });
   }
 
-  // Create test pen
+  
   async createPen(tenantId: string, facilityId: string, overrides: Partial<any> = {}) {
     return await this.prisma.pen.create({
       data: {
@@ -101,7 +101,7 @@ export class TestDataFactory {
     });
   }
 
-  // Create test animal
+  
   async createAnimal(tenantId: string, overrides: Partial<any> = {}) {
     return await this.prisma.animal.create({
       data: {
@@ -119,15 +119,15 @@ export class TestDataFactory {
     });
   }
 
-  // Create complete test dataset
+  
   async createCompleteDataset() {
-    // Create tenant
+    
     const tenant = await this.createTenant({
       name: 'Complete Test Farm',
       subdomain: 'complete-test',
     });
 
-    // Create users with different roles
+    
     const adminUser = await this.createUser(tenant.id, {
       email: 'admin@test.com',
       firstName: 'Admin',
@@ -142,7 +142,7 @@ export class TestDataFactory {
       role: 'operator',
     });
 
-    // Create facilities
+    
     const breedingFacility = await this.createFacility(tenant.id, {
       name: 'Breeding Facility',
       type: 'breeding',
@@ -155,7 +155,7 @@ export class TestDataFactory {
       capacity: 500,
     });
 
-    // Create pens
+    
     const breedingPen1 = await this.createPen(tenant.id, breedingFacility.id, {
       name: 'Breeding Pen A',
       code: 'BP-A',
@@ -177,7 +177,7 @@ export class TestDataFactory {
       capacity: 50,
     });
 
-    // Create animals with different statuses
+    
     const activeAnimal = await this.createAnimal(tenant.id, {
       internalCode: 'ACTIVE-001',
       sex: 'male',
@@ -214,11 +214,11 @@ export class TestDataFactory {
     };
   }
 
-  // Disconnect from database
+  
   async disconnect() {
     await this.prisma.$disconnect();
   }
 }
 
-// Export singleton instance
+
 export const testDataFactory = new TestDataFactory();

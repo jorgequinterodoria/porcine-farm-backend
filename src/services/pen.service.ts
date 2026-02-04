@@ -4,7 +4,7 @@ import { CreatePenDTO, UpdatePenDTO } from '../types/infrastructure.types';
 
 export class PenService {
     async create(tenantId: string, data: CreatePenDTO) {
-        // Verify facility exists
+        
         const facility = await prisma.facility.findFirst({
             where: { id: data.facilityId, tenantId, deletedAt: null }
         });

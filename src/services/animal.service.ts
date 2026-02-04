@@ -8,9 +8,9 @@ import {
 } from '../types/animal.types';
 
 export class AnimalService {
-    /**
-     * Crear un nuevo animal
-     */
+    
+
+
     async create(tenantId: string, data: CreateAnimalDTO) {
         const {
             birthDate,
@@ -22,7 +22,7 @@ export class AnimalService {
             ...otherData
         } = data;
 
-        // Verificar si el código interno ya existe en este tenant
+        
         const existing = await prisma.animal.findFirst({
             where: {
                 tenantId,
@@ -49,9 +49,9 @@ export class AnimalService {
         });
     }
 
-    /**
-     * Obtener todos los animales del tenant
-     */
+    
+
+
     async findAll(tenantId: string, filters: any = {}) {
         const { status, penId, batchId } = filters;
 
@@ -75,9 +75,9 @@ export class AnimalService {
         });
     }
 
-    /**
-     * Obtener un animal por ID
-     */
+    
+
+
     async findOne(tenantId: string, id: string) {
         const animal = await prisma.animal.findFirst({
             where: { id, tenantId, deletedAt: null },
@@ -108,9 +108,9 @@ export class AnimalService {
         return animal;
     }
 
-    /**
-     * Actualizar animal
-     */
+    
+
+
     async update(tenantId: string, id: string, data: UpdateAnimalDTO) {
         const animal = await this.findOne(tenantId, id);
 
@@ -130,9 +130,9 @@ export class AnimalService {
         });
     }
 
-    /**
-     * Eliminar animal (soft delete)
-     */
+    
+
+
     async delete(tenantId: string, id: string) {
         const animal = await this.findOne(tenantId, id);
 
@@ -147,9 +147,9 @@ export class AnimalService {
         return { message: 'Animal deleted successfully' };
     }
 
-    /**
-     * Registrar peso
-     */
+    
+
+
     async recordWeight(tenantId: string, animalId: string, userId: string, data: RecordWeightDTO) {
         const animal = await this.findOne(tenantId, animalId);
 
@@ -165,13 +165,13 @@ export class AnimalService {
         });
     }
 
-    /**
-     * Registrar movimiento
-     */
+    
+
+
     async recordMovement(tenantId: string, animalId: string, userId: string, data: RecordMovementDTO) {
         const animal = await this.findOne(tenantId, animalId);
 
-        // Si hay un toPenId, actualizar el currentPenId del animal
+        
         return prisma.$transaction(async (tx) => {
             const movement = await tx.animalMovement.create({
                 data: {

@@ -29,9 +29,9 @@ interface UserRateLimitOptions extends RateLimitOptions {
   };
 }
 
-/**
- * Create Redis store for rate limiting
- */
+
+
+
 const createRedisStore = () => {
   try {
     return new RateLimitRedisStore({
@@ -44,13 +44,13 @@ const createRedisStore = () => {
   }
 };
 
-/**
- * Default rate limiting configuration
- */
+
+
+
 export const createRateLimit = (options: RateLimitOptions = {}) => {
   const {
-    windowMs = 15 * 60 * 1000, // 15 minutes
-    max = 100, // 100 requests per window
+    windowMs = 15 * 60 * 1000, 
+    max = 100, 
     message = {
       success: false,
       error: 'Too many requests, please try again later.',
@@ -77,9 +77,9 @@ export const createRateLimit = (options: RateLimitOptions = {}) => {
   });
 };
 
-/**
- * Tenant-based rate limiting with plan-specific limits
- */
+
+
+
 export const createTenantRateLimit = (options: TenantRateLimitOptions = {}) => {
   const {
     windowMs = 15 * 60 * 1000,
@@ -99,10 +99,10 @@ export const createTenantRateLimit = (options: TenantRateLimitOptions = {}) => {
       const tenant = user?.tenant;
       
       if (!tenant || !planBasedLimits) {
-        return 200; // Default fallback
+        return 200; 
       }
 
-      // Return limit based on tenant plan
+      
       return planBasedLimits[tenant.plan] || planBasedLimits.basic;
     },
     message: {
@@ -115,7 +115,7 @@ export const createTenantRateLimit = (options: TenantRateLimitOptions = {}) => {
       return `tenant:${user?.tenantId || 'anonymous'}:${req.ip}`;
     },
     skip: (req: Request) => {
-      // Skip rate limiting for health checks and static assets
+      
       const path = req.path;
       return path.startsWith('/health') || path.startsWith('/static') || path.startsWith('/api-docs');
     },
@@ -125,9 +125,9 @@ export const createTenantRateLimit = (options: TenantRateLimitOptions = {}) => {
   });
 };
 
-/**
- * User-based rate limiting with role-specific limits
- */
+
+
+
 export const createUserRateLimit = (options: UserRateLimitOptions = {}) => {
   const {
     windowMs = 15 * 60 * 1000,
@@ -145,10 +145,10 @@ export const createUserRateLimit = (options: UserRateLimitOptions = {}) => {
       const user = req.user as any;
       
       if (!user || !roleBasedLimits) {
-        return 100; // Default fallback
+        return 100; 
       }
 
-      // Return limit based on user role
+      
       return roleBasedLimits[user.role] || roleBasedLimits.operator;
     },
     message: {
@@ -161,7 +161,7 @@ export const createUserRateLimit = (options: UserRateLimitOptions = {}) => {
       return `user:${user?.id || 'anonymous'}:${req.ip}`;
     },
     skip: (req: Request) => {
-      // Skip rate limiting for authenticated admins
+      
       const user = req.user as any;
       return user?.role === 'super_admin';
     },
@@ -171,13 +171,13 @@ export const createUserRateLimit = (options: UserRateLimitOptions = {}) => {
   });
 };
 
-/**
- * API endpoint specific rate limiting
- */
+
+
+
 export const createEndpointRateLimit = (endpoint: string, options: RateLimitOptions = {}) => {
   const {
-    windowMs = 60 * 1000, // 1 minute
-    max = 20, // 20 requests per minute
+    windowMs = 60 * 1000, 
+    max = 20, 
     message = `Rate limit exceeded for ${endpoint}. Please try again later.`,
     ...options,
   } = options;
@@ -197,19 +197,19 @@ export const createEndpointRateLimit = (endpoint: string, options: RateLimitOpti
   });
 };
 
-/**
- * Auth-specific rate limiting (stricter for sensitive operations)
- */
+
+
+
 export const createAuthRateLimit = (options: RateLimitOptions = {}) => {
   return rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per 15 minutes
+    windowMs: 15 * 60 * 1000, 
+    max: 5, 
     message: {
       success: false,
       error: 'Too many authentication attempts. Please try again later.',
       retryAfter: 15 * 60,
     },
-    skipSuccessfulRequests: true, // Don't count successful auth attempts
+    skipSuccessfulRequests: true, 
     keyGenerator: (req: Request) => `auth:${req.ip}`,
     store: createRedisStore(),
     standardHeaders: true,
@@ -218,13 +218,13 @@ export const createAuthRateLimit = (options: RateLimitOptions = {}) => {
   });
 };
 
-/**
- * Data modification rate limiting (create, update, delete operations)
- */
+
+
+
 export const createMutationRateLimit = (options: RateLimitOptions = {}) => {
   return rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 30, // 30 mutations per minute
+    windowMs: 60 * 1000, 
+    max: 30, 
     message: {
       success: false,
       error: 'Too many data modifications. Please wait before making more changes.',
@@ -235,7 +235,7 @@ export const createMutationRateLimit = (options: RateLimitOptions = {}) => {
       return `mutation:${user?.tenantId}:${user?.id}:${req.ip}`;
     },
     skip: (req: Request) => {
-      // Skip for GET requests
+      
       return req.method === 'GET';
     },
     store: createRedisStore(),
@@ -245,13 +245,13 @@ export const createMutationRateLimit = (options: RateLimitOptions = {}) => {
   });
 };
 
-/**
- * File upload rate limiting
- */
+
+
+
 export const createUploadRateLimit = (options: RateLimitOptions = {}) => {
   return rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // 10 uploads per hour
+    windowMs: 60 * 60 * 1000, 
+    max: 10, 
     message: {
       success: false,
       error: 'Too many file uploads. Please wait before uploading more files.',
@@ -268,9 +268,9 @@ export const createUploadRateLimit = (options: RateLimitOptions = {}) => {
   });
 };
 
-/**
- * Progressively restrictive rate limiting (adaptive)
- */
+
+
+
 export const createAdaptiveRateLimit = (options: RateLimitOptions = {}) => {
   const baseOptions = {
     windowMs: 15 * 60 * 1000,
@@ -289,18 +289,18 @@ export const createAdaptiveRateLimit = (options: RateLimitOptions = {}) => {
       const key = `adaptive:${req.ip}`;
       
       try {
-        // Get current request count
+        
         const currentCount = await cacheService.get<number>(key) || 0;
         
-        // Adaptively adjust limit based on current usage
+        
         if (currentCount < 10) {
-          return baseOptions.max; // Full limit available
+          return baseOptions.max; 
         } else if (currentCount < 25) {
-          return Math.floor(baseOptions.max * 0.8); // 80% of limit
+          return Math.floor(baseOptions.max * 0.8); 
         } else if (currentCount < 50) {
-          return Math.floor(baseOptions.max * 0.6); // 60% of limit
+          return Math.floor(baseOptions.max * 0.6); 
         } else {
-          return Math.floor(baseOptions.max * 0.4); // 40% of limit
+          return Math.floor(baseOptions.max * 0.4); 
         }
       } catch (error) {
         console.error('Error in adaptive rate limiting:', error);
@@ -308,12 +308,12 @@ export const createAdaptiveRateLimit = (options: RateLimitOptions = {}) => {
       }
     },
     onLimitReached: (req: Request, res: Response) => {
-      // Log rate limit violations
+      
       console.warn(`Rate limit reached for IP: ${req.ip}, Path: ${req.path}, User: ${(req.user as any)?.id}`);
       
-      // Optionally implement IP blocking after multiple violations
+      
       const violationKey = `violations:${req.ip}`;
-      cacheService.incrementCounter(violationKey, 1, 3600); // Count violations for 1 hour
+      cacheService.incrementCounter(violationKey, 1, 3600); 
     },
     store: createRedisStore(),
     standardHeaders: true,
@@ -321,38 +321,38 @@ export const createAdaptiveRateLimit = (options: RateLimitOptions = {}) => {
   });
 };
 
-/**
- * Rate limiting middleware factory for different scenarios
- */
+
+
+
 export const RateLimitMiddleware = {
-  /**
-   * General API rate limiting
-   */
+  
+
+
   general: createRateLimit({
     windowMs: 15 * 60 * 1000,
     max: 200,
   }),
 
-  /**
-   * Authentication endpoint rate limiting
-   */
+  
+
+
   auth: createAuthRateLimit(),
 
-  /**
-   * Data modification rate limiting
-   */
+  
+
+
   mutation: createMutationRateLimit(),
 
-  /**
-   * File upload rate limiting
-   */
+  
+
+
   upload: createUploadRateLimit(),
 
-  /**
-   * Tenant-aware rate limiting
-   */
+  
+
+
   tenant: createTenantRateLimit({
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: 60 * 1000, 
     planBasedLimits: {
       free: 50,
       basic: 200,
@@ -361,11 +361,11 @@ export const RateLimitMiddleware = {
     },
   }),
 
-  /**
-   * User-aware rate limiting
-   */
+  
+
+
   user: createUserRateLimit({
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: 60 * 1000, 
     roleBasedLimits: {
       super_admin: 1000,
       farm_admin: 500,
@@ -373,66 +373,66 @@ export const RateLimitMiddleware = {
     },
   }),
 
-  /**
-   * API endpoint specific
-   */
+  
+
+
   endpoint: (endpoint: string, options: RateLimitOptions = {}) => 
     createEndpointRateLimit(endpoint, options),
 
-  /**
-   * Adaptive rate limiting
-   */
+  
+
+
   adaptive: createAdaptiveRateLimit({
     windowMs: 15 * 60 * 1000,
     max: 500,
   }),
 };
 
-/**
- * Rate limiting utilities
- */
+
+
+
 export const RateLimitUtils = {
-  /**
-   * Check if a request would be rate limited
-   */
+  
+
+
   checkRateLimit: async (key: string, limit: number, windowMs: number): Promise<boolean> => {
     const current = await cacheService.get<number>(key) || 0;
     return current >= limit;
   },
 
-  /**
-   * Get remaining requests for a rate limit
-   */
+  
+
+
   getRemainingRequests: async (key: string, limit: number): Promise<number> => {
     const current = await cacheService.get<number>(key) || 0;
     return Math.max(0, limit - current);
   },
 
-  /**
-   * Increment rate limit counter
-   */
+  
+
+
   incrementCounter: async (key: string, increment: number = 1, ttl?: number): Promise<void> => {
     const current = await cacheService.get<number>(key) || 0;
     await cacheService.set(key, current + increment, ttl || 3600);
   },
 
-  /**
-   * Reset rate limit counter
-   */
+  
+
+
   resetCounter: async (key: string): Promise<void> => {
     await cacheService.del(key);
   },
 
-  /**
-   * Get rate limit statistics
-   */
+  
+
+
   getStats: async (): Promise<{
     totalRequests: number;
     blockedRequests: number;
     topIps: Array<{ ip: string; count: number }>;
   }> => {
-    // This would require more comprehensive logging
-    // Implementation depends on your monitoring setup
+    
+    
     return {
       totalRequests: 0,
       blockedRequests: 0,
@@ -441,7 +441,7 @@ export const RateLimitUtils = {
   },
 };
 
-// Extend cache service with rate limiting utilities
+
 declare module '../config/cache' {
   interface CacheService {
     incrementCounter(key: string, increment?: number, ttl?: number): Promise<void>;

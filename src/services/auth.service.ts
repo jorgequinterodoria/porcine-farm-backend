@@ -17,9 +17,9 @@ export class AuthService {
     private readonly JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
     private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-    /**
-     * Registrar un nuevo usuario y opcionalmente un nuevo tenant
-     */
+    
+
+
     async register(data: RegisterDTO): Promise<AuthResponse> {
         const {
             email,
@@ -32,7 +32,7 @@ export class AuthService {
             tenantSubdomain
         } = data;
 
-        // Verificar si el email ya existe
+        
         const existingUser = await prisma.user.findFirst({
             where: { email }
         });
@@ -41,15 +41,15 @@ export class AuthService {
             throw new AppError('Email already registered', 400);
         }
 
-        // Hash password
+        
         const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
 
         let tenant;
         let userRole = role || 'operator';
 
-        // Si se proporciona información del tenant, crear uno nuevo
+        
         if (tenantName && tenantSubdomain) {
-            // Verificar que el subdominio no exista
+            
             const existingTenant = await prisma.tenant.findUnique({
                 where: { subdomain: tenantSubdomain }
             });
@@ -58,7 +58,7 @@ export class AuthService {
                 throw new AppError('Subdomain already taken', 400);
             }
 
-            // Crear tenant
+            
             tenant = await prisma.tenant.create({
                 data: {
                     name: tenantName,
@@ -70,7 +70,7 @@ export class AuthService {
                 }
             });
 
-            // El primer usuario del tenant es admin
+            
             userRole = 'farm_admin';
         } else {
             throw new AppError(
@@ -79,7 +79,7 @@ export class AuthService {
             );
         }
 
-        // Crear usuario
+        
         const user = await prisma.user.create({
             data: {
                 tenantId: tenant.id,
@@ -101,7 +101,7 @@ export class AuthService {
             }
         });
 
-        // Generar token
+        
         const token = this.generateToken({
             userId: user.id,
             tenantId: user.tenantId,
@@ -121,13 +121,13 @@ export class AuthService {
         };
     }
 
-    /**
-     * Login de usuario
-     */
+    
+
+
     async login(data: LoginDTO): Promise<AuthResponse> {
         const { email, password } = data;
 
-        // Buscar usuario
+        
         const user = await prisma.user.findFirst({
             where: {
                 email,
@@ -153,7 +153,7 @@ export class AuthService {
             throw new AppError('Invalid credentials', 401);
         }
 
-        // Verificar que el tenant esté activo
+        
         if (user.tenant) {
             if (!user.tenant.isActive || user.tenant.deletedAt) {
                 throw new AppError('Your organization account is inactive', 403);
@@ -167,20 +167,20 @@ export class AuthService {
             }
         }
 
-        // Verificar password
+        
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
         if (!isPasswordValid) {
             throw new AppError('Invalid credentials', 401);
         }
 
-        // Actualizar last login
+        
         await prisma.user.update({
             where: { id: user.id },
             data: { lastLogin: new Date() }
         });
 
-        // Generar token
+        
         const token = this.generateToken({
             userId: user.id,
             tenantId: user.tenantId,
@@ -195,7 +195,7 @@ export class AuthService {
                 lastName: user.lastName,
                 role: user.role,
                 tenantId: user.tenantId,
-                farmId: user.tenantId // Compatibility fallback
+                farmId: user.tenantId 
             },
             tenant: user.tenant ? {
                 id: user.tenant.id,
@@ -208,16 +208,16 @@ export class AuthService {
         };
     }
 
-    /**
-     * Cambiar contraseña
-     */
+    
+
+
     async changePassword(
         userId: string,
         data: ChangePasswordDTO
     ): Promise<{ message: string }> {
         const { currentPassword, newPassword } = data;
 
-        // Buscar usuario
+        
         const user = await prisma.user.findUnique({
             where: { id: userId }
         });
@@ -226,7 +226,7 @@ export class AuthService {
             throw new AppError('User not found', 404);
         }
 
-        // Verificar password actual
+        
         const isPasswordValid = await bcrypt.compare(
             currentPassword,
             user.passwordHash
@@ -236,10 +236,10 @@ export class AuthService {
             throw new AppError('Current password is incorrect', 400);
         }
 
-        // Hash nueva contraseña
+        
         const newPasswordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
 
-        // Actualizar password
+        
         await prisma.user.update({
             where: { id: userId },
             data: { passwordHash: newPasswordHash }
@@ -248,9 +248,9 @@ export class AuthService {
         return { message: 'Password changed successfully' };
     }
 
-    /**
-     * Solicitar reset de contraseña
-     */
+    
+
+
     async requestPasswordReset(
         data: ResetPasswordRequestDTO
     ): Promise<{ message: string }> {
@@ -264,18 +264,18 @@ export class AuthService {
             }
         });
 
-        // Por seguridad, siempre devolver el mismo mensaje
+        
         if (!user) {
             return {
                 message: 'If the email exists, a reset link has been sent'
             };
         }
 
-        // Generar token de reset
+        
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hora
+        const resetTokenExpires = new Date(Date.now() + 3600000); 
 
-        // Guardar token
+        
         await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -285,7 +285,7 @@ export class AuthService {
         });
 
         // TODO: Enviar email con el token
-        // En desarrollo, puedes loggearlo:
+        
         if (process.env.NODE_ENV === 'development') {
             console.log('Reset Token:', resetToken);
             console.log('Reset URL:', `http://localhost:5173/reset-password?token=${resetToken}`);
@@ -296,13 +296,13 @@ export class AuthService {
         };
     }
 
-    /**
-     * Resetear contraseña con token
-     */
+    
+
+
     async resetPassword(data: ResetPasswordDTO): Promise<{ message: string }> {
         const { token, newPassword } = data;
 
-        // Buscar usuario con el token válido
+        
         const user = await prisma.user.findFirst({
             where: {
                 resetToken: token,
@@ -318,10 +318,10 @@ export class AuthService {
             throw new AppError('Invalid or expired reset token', 400);
         }
 
-        // Hash nueva contraseña
+        
         const passwordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
 
-        // Actualizar password y limpiar token
+        
         await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -334,9 +334,9 @@ export class AuthService {
         return { message: 'Password reset successfully' };
     }
 
-    /**
-     * Obtener perfil del usuario
-     */
+    
+
+
     async getProfile(userId: string) {
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -370,9 +370,9 @@ export class AuthService {
         return user;
     }
 
-    /**
-     * Actualizar perfil
-     */
+    
+
+
     async updateProfile(
         userId: string,
         data: {
@@ -399,9 +399,9 @@ export class AuthService {
         return user;
     }
 
-    /**
-     * Invitar usuario a un tenant existente (solo admins)
-     */
+    
+
+
     async inviteUser(
         tenantId: string,
         data: {
@@ -412,7 +412,7 @@ export class AuthService {
             phone?: string;
         }
     ) {
-        // Verificar límite de usuarios
+        
         const tenant = await prisma.tenant.findUnique({
             where: { id: tenantId },
             select: { maxUsers: true }
@@ -437,7 +437,7 @@ export class AuthService {
             );
         }
 
-        // Verificar que el email no exista
+        
         const existingUser = await prisma.user.findFirst({
             where: {
                 email: data.email,
@@ -449,11 +449,11 @@ export class AuthService {
             throw new AppError('User with this email already exists in your organization', 400);
         }
 
-        // Generar contraseña temporal
+        
         const tempPassword = crypto.randomBytes(12).toString('hex');
         const passwordHash = await bcrypt.hash(tempPassword, this.SALT_ROUNDS);
 
-        // Crear usuario
+        
         const user = await prisma.user.create({
             data: {
                 tenantId,
@@ -486,9 +486,9 @@ export class AuthService {
         };
     }
 
-    /**
-     * Generar JWT token
-     */
+    
+
+
     private generateToken(payload: {
         userId: string;
         tenantId: string;
@@ -499,9 +499,9 @@ export class AuthService {
         });
     }
 
-    /**
-     * Verificar token
-     */
+    
+
+
     verifyToken(token: string): any {
         try {
             return jwt.verify(token, this.JWT_SECRET);

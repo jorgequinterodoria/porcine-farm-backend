@@ -6,7 +6,7 @@ export interface RegisterDTO {
   phone?: string;
   role?: string;
 
-  // Datos del tenant (solo para el primer usuario/admin)
+  
   tenantName?: string;
   tenantSubdomain?: string;
 }

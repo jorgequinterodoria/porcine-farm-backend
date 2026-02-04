@@ -10,11 +10,11 @@ export interface CreateTenantDTO {
     subscriptionPlan?: string;
     maxAnimals?: number;
     maxUsers?: number;
-    // Admin fields
+    
     adminFirstName: string;
     adminLastName: string;
     adminEmail: string;
-    adminPassword?: string; // If not provided, a random one should be generated
+    adminPassword?: string; 
 }
 
 export interface UpdateTenantDTO {

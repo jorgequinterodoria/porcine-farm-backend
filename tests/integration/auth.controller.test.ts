@@ -3,7 +3,7 @@ import { app } from '../../../src/index';
 import { prisma } from '../../../src/config/database';
 import bcrypt from 'bcrypt';
 
-// Mock dependencies for controller testing
+
 jest.mock('../../../src/config/database', () => ({
   prisma: {
     user: {
@@ -83,7 +83,7 @@ describe('Auth Controller Integration Tests', () => {
     it('should return 400 if required fields missing', async () => {
       const invalidData = {
         email: 'test@example.com'
-        // Missing password, firstName, etc.
+        
       };
 
       const response = await request(app)
@@ -252,11 +252,11 @@ describe('Auth Controller Integration Tests', () => {
 
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
 
-      // Mock JWT verification middleware
+      
       const mockToken = 'validtoken';
       const mockDecodedToken = { userId: 'user-1', tenantId: 'tenant-1', role: 'farm_admin' };
 
-      // For this test, we need to mock the auth middleware
+      
       jest.doMock('../../../src/middlewares/auth.middleware', () => ({
         authMiddleware: (req: any, res: any, next: any) => {
           req.user = mockDecodedToken;

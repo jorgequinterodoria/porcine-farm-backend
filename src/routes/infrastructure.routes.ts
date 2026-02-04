@@ -13,14 +13,14 @@ const router = Router();
 
 router.use(authenticate);
 
-// Facilities
+
 router.post('/facilities', validate(createFacilitySchema), infrastructureController.createFacility);
 router.get('/facilities', infrastructureController.getFacilities);
 router.get('/facilities/:id', infrastructureController.getFacility);
 router.put('/facilities/:id', validate(updateFacilitySchema), infrastructureController.updateFacility);
 router.delete('/facilities/:id', infrastructureController.deleteFacility);
 
-// Pens
+
 router.post('/pens', validate(createPenSchema), infrastructureController.createPen);
 router.get('/pens', infrastructureController.getPens);
 router.get('/pens/:id', infrastructureController.getPen);

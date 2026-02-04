@@ -4,7 +4,7 @@ import { facilityService } from '../services/facility.service';
 import { penService } from '../services/pen.service';
 
 export class InfrastructureController {
-    // --- Facilities ---
+    
     /**
      * @swagger
      * /infrastructure/facilities:
@@ -123,7 +123,7 @@ export class InfrastructureController {
         res.status(200).json({ success: true, message: 'Facility deleted successfully' });
     });
 
-    // --- Pens ---
+    
     /**
      * @swagger
      * /infrastructure/pens:

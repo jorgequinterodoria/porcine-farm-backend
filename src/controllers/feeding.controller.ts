@@ -3,7 +3,7 @@ import { asyncHandler } from '../middlewares/errorHandler.middleware';
 import { feedingService } from '../services/feeding.service';
 
 export class FeedingController {
-    // --- Feed Types ---
+    
     /**
      * @swagger
      * /feeding/types:
@@ -111,7 +111,7 @@ export class FeedingController {
         res.status(200).json({ success: true, data: result });
     });
 
-    // --- Inventory Movements ---
+    
     /**
      * @swagger
      * /feeding/inventory/movement:
@@ -147,7 +147,7 @@ export class FeedingController {
         res.status(201).json({ success: true, data: result });
     });
 
-    // --- Consumption ---
+    
     /**
      * @swagger
      * /feeding/consumption:
@@ -209,7 +209,7 @@ export class FeedingController {
         res.status(200).json({ success: true, data: result });
     });
 
-    // --- Alerts ---
+    
     /**
      * @swagger
      * /feeding/alerts/low-stock:

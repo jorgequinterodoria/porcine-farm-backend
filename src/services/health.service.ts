@@ -8,7 +8,7 @@ import {
 } from '../types/health.types';
 
 export class HealthService {
-    // --- Medications CRUD ---
+    
     async createMedication(data: CreateMedicationDTO) {
         return prisma.medication.create({ data });
     }
@@ -37,7 +37,7 @@ export class HealthService {
         });
     }
 
-    // --- Vaccines CRUD ---
+    
     async createVaccine(data: CreateVaccineDTO) {
         return prisma.vaccine.create({ data });
     }
@@ -66,7 +66,7 @@ export class HealthService {
         });
     }
 
-    // --- Diseases CRUD ---
+    
     async createDisease(data: CreateDiseaseDTO) {
         return prisma.disease.create({ data });
     }
@@ -95,9 +95,9 @@ export class HealthService {
         });
     }
 
-    // --- Health Records ---
+    
     async createHealthRecord(tenantId: string, data: CreateHealthRecordDTO) {
-        // Basic verification
+        
         if (data.animalId) {
             const animal = await prisma.animal.findFirst({ where: { id: data.animalId, tenantId } });
             if (!animal) throw new AppError('Animal not found', 404);
@@ -126,7 +126,7 @@ export class HealthService {
                         healthRecordId: record.id,
                         animalId: recordData.animalId,
                         batchId: recordData.batchId,
-                        administeredBy: t.administeredBy // Or use veterinarianId as default?
+                        administeredBy: t.administeredBy 
                     }))
                 });
             }

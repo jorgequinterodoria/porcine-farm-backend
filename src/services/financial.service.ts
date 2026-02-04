@@ -7,7 +7,7 @@ import {
 } from '../types/financial.types';
 
 export class FinancialService {
-    // --- Categories ---
+    
     async createCategory(tenantId: string, data: CreateTransactionCategoryDTO) {
         return prisma.transactionCategory.create({
             data: { ...data, tenantId }
@@ -21,7 +21,7 @@ export class FinancialService {
         });
     }
 
-    // --- Transactions ---
+    
     async createTransaction(tenantId: string, data: CreateFinancialTransactionDTO, userId: string) {
         return prisma.financialTransaction.create({
             data: { ...data, tenantId, recordedBy: userId }
@@ -40,10 +40,10 @@ export class FinancialService {
         });
     }
 
-    // --- Animal Sales ---
+    
     async createSale(tenantId: string, data: CreateAnimalSaleDTO, userId: string) {
         return prisma.$transaction(async (tx) => {
-            // 1. Create the sale header
+            
             const sale = await tx.animalSale.create({
                 data: {
                     tenantId,
@@ -65,20 +65,20 @@ export class FinancialService {
                 }
             });
 
-            // 2. Update status of animals to 'sold'
+            
             const animalIds = data.details.map(d => d.animalId);
             await tx.animal.updateMany({
                 where: { id: { in: animalIds }, tenantId },
                 data: { currentStatus: 'sold', isActive: false }
             });
 
-            // 3. Register as income in financial transactions
+            
             await tx.financialTransaction.create({
                 data: {
                     tenantId,
                     transactionDate: data.saleDate,
                     transactionType: 'income',
-                    categoryId: 'SALES_CAT_ID', // This should be a real ID from db
+                    categoryId: 'SALES_CAT_ID', 
                     amount: data.totalAmount,
                     description: `Sale of ${animalIds.length} animals to ${data.customerName}`,
                     recordedBy: userId

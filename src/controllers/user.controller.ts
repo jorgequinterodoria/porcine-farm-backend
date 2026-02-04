@@ -44,7 +44,7 @@ export const createUser = async (req: Request, res: Response) => {
         throw new AppError('Todos los campos son requeridos', 400);
     }
 
-    // Check if user already exists in this tenant
+    
     const existingUser = await prisma.user.findFirst({
         where: { email, tenantId }
     });
@@ -64,7 +64,7 @@ export const createUser = async (req: Request, res: Response) => {
             lastName,
             role,
             isActive: true,
-            emailVerified: true // Direct creation by admin assumes verification
+            emailVerified: true 
         },
         select: {
             id: true,
@@ -138,7 +138,7 @@ export const deleteUser = async (req: Request, res: Response) => {
         throw new AppError('Usuario no encontrado', 404);
     }
 
-    // Soft delete
+    
     await prisma.user.update({
         where: { id },
         data: {

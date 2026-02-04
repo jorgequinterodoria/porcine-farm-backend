@@ -14,24 +14,24 @@ import {
 
 const router = Router();
 
-// Rutas públicas
+
 router.post(
   '/register',
-  rateLimit(5, 15 * 60 * 1000), // 5 registros por 15 minutos
+  rateLimit(5, 15 * 60 * 1000), 
   validate(registerSchema),
   authController.register
 );
 
 router.post(
   '/login',
-  rateLimit(10, 15 * 60 * 1000), // 10 intentos por 15 minutos
+  rateLimit(10, 15 * 60 * 1000), 
   validate(loginSchema),
   authController.login
 );
 
 router.post(
   '/forgot-password',
-  rateLimit(3, 15 * 60 * 1000), // 3 intentos por 15 minutos
+  rateLimit(3, 15 * 60 * 1000), 
   validate(resetPasswordRequestSchema),
   authController.requestPasswordReset
 );
@@ -43,8 +43,8 @@ router.post(
   authController.resetPassword
 );
 
-// Rutas protegidas
-router.use(authenticate); // Todas las rutas siguientes requieren autenticación
+
+router.use(authenticate); 
 
 router.get('/profile', authController.getProfile);
 
@@ -58,7 +58,7 @@ router.post(
 
 router.post('/logout', authController.logout);
 
-// Solo admins pueden invitar usuarios
+
 router.post(
   '/invite',
   isFarmAdminOrAbove,

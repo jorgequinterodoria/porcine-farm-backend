@@ -27,7 +27,7 @@ router.use('/operations', operationRoutes);
 router.use('/users', userRoutes);
 router.use('/sync', syncRoutes);
 
-// Aquí irán las demás rutas
-// etc...
+
+
 
 export default router;

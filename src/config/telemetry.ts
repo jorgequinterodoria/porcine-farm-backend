@@ -2,7 +2,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { Resource } from '@opentelemetry/api';
 import { loggers } from '../config/logger';
 
-// OpenTelemetry configuration
+
 const telemetry = new NodeSDK({
   resource: new Resource({
     serviceName: 'granja-multitenant-backend',
@@ -15,21 +15,21 @@ const telemetry = new NodeSDK({
     },
   }),
   instrumentations: [
-    // HTTP instrumentation
+    
     getNodeAutoInstrumentations({
       include: ['http', 'https'],
       traceResponder: getTraceResponder(),
     }),
     
-    // Database instrumentation
+    
     getPrismaInstrumentation(),
   ],
 });
 
-// Trace responder for HTTP requests
+
 function getTraceResponder() {
   return (span, result) => {
-    // Add request details to span
+    
     span.setAttributes({
       'http.method': span.attributes['http.method'],
       'http.status_code': result.statusCode ? String(result.statusCode) : undefined,
@@ -39,17 +39,17 @@ function getTraceResponder() {
       'http.user_agent': span.attributes['http.user_agent'],
     });
     
-    // Log completion
+    
     loggers.app.info(`HTTP Request: ${span.attributes['http.method']} ${span.attributes['http.url']} - ${result.statusCode}`);
     
     return result;
   };
 }
 
-// Prisma instrumentation
+
 function getPrismaInstrumentation() {
   try {
-    // Dynamic import to avoid circular dependencies
+    
     const { Prisma } = require('@prisma/client');
     
     return {
@@ -58,7 +58,7 @@ function getPrismaInstrumentation() {
         const originalCreate = model.prototype.$create;
         model.prototype.$create = function (args) {
           return originalCreate.call(this, args).then(result => {
-            // Log successful database operations
+            
             if (result) {
               loggers.database.info(`DB CREATE: ${model.modelName}`, {
                 operation: 'create',
@@ -83,7 +83,7 @@ function getPrismaInstrumentation() {
   }
 }
 
-// Custom logger factory
+
 export const createTelemetryLogger = (name: string, attributes: Record<string, any> = {}) => {
   return telemetry.getLogger(name, {
     attributes: {
@@ -93,14 +93,14 @@ export const createTelemetryLogger = (name: string, attributes: Record<string, a
   });
 };
 
-// Custom metrics creator
+
 export const createMetric = (name: string, description: string, unit: 'count' | 'duration' | 'bytes', attributes: Record<string, any> = {}) => {
   return telemetry.createMetric(name, description, unit, attributes);
 };
 
-// Performance tracking utilities
+
 export const telemetryPerformance = {
-  // Track HTTP requests
+  
   trackHttpRequest: (method: string, url: string, statusCode: number, responseTime: number, attributes: Record<string, any> = {}) => {
     const httpRequestMetric = createMetric('http_request', 'HTTP request', 'count', {
       method,
@@ -112,7 +112,7 @@ export const telemetryPerformance = {
     
     httpRequestMetric.add(1);
     
-    // Track slow requests
+    
     if (responseTime > 500) {
       const slowHttpRequestMetric = createMetric('http_slow_request', 'Slow HTTP request', 'count', {
         method,
@@ -126,7 +126,7 @@ export const telemetryPerformance = {
     }
   },
 
-  // Track database operations
+  
   trackDatabaseOperation: (operation: string, table: string, success: boolean, duration: number, attributes: Record<string, any> = {}) => {
     const dbOperationMetric = createMetric(`db_${operation}`, `Database ${operation}`, 'count', {
       table,
@@ -148,13 +148,13 @@ export const telemetryPerformance = {
     }
   },
 
-  // Track business metrics
+  
   trackBusinessEvent: (eventName: string, description: string, attributes: Record<string, any> = {}) => {
     const businessMetric = createMetric(`business_${eventName}`, description, 'count', attributes);
     businessMetric.add(1);
   },
 
-  // Track performance metrics
+  
   trackPerformanceMetric: (name: string, value: number, unit: string = 'count', attributes: Record<string, any> = {}) => {
     const performanceMetric = createMetric(`performance_${name}`, description, unit, {
       value,
@@ -164,26 +164,26 @@ export const telemetryPerformance = {
     performanceMetric.record(value);
   },
 
-  // Track custom metrics
+  
   trackCustomMetric: (name: string, value: any, unit: string, attributes: Record<string, any> = {}) => {
     const customMetric = createMetric(name, name, unit, attributes);
     customMetric.record(value);
   },
 };
 
-// Trace utilities
+
 export const telemetryTrace = {
-  // Start a new trace
+  
   startSpan: (name: string, kind: string, attributes: Record<string, any> = {}) => {
     return telemetry.startTrace(name, kind, attributes);
   },
 
-  // Record an exception
+  
   recordException: (exception: Error, attributes: Record<string, any> = {}) => {
     telemetry.recordException(exception, attributes);
   },
 
-  // Record an event
+  
   recordEvent: (name: string, attributes: Record<string, any> = {}) => {
     telemetry.createEvent(name, {
       kind: telemetry.EVENT_KIND_ENUM.COUNTER,
@@ -192,18 +192,18 @@ export const telemetryTrace = {
     });
   },
 
-  // Record an error
+  
   recordError: (error: Error, attributes: Record<string, any> = {}) => {
     telemetry.recordException(error, attributes);
   },
 };
 
-// Health check integration
+
 export const healthCheckWithTelemetry = async () => {
   const tracer = telemetryTrace.startSpan('health_check', 'server');
   
   try {
-    const check = await Promise.resolve({ healthy: true }); // Simulated health check
+    const check = await Promise.resolve({ healthy: true }); 
     
     tracer.setAttributes({
       check_type: 'comprehensive',
@@ -240,21 +240,21 @@ export const healthCheckWithTelemetry = async () => {
   }
 };
 
-// Auto-instrumentation setup
+
 export const setupTelemetryAutoInstrumentation = () => {
-  // Enable process metrics
+  
   const processMetric = telemetryPerformance.trackPerformanceMetric('process', process.memoryUsage().rss, 'bytes');
   
   setInterval(() => {
     processMetric.record(process.memoryUsage().rss);
-  }, 30000); // Every 30 seconds
+  }, 30000); 
 };
 
-// Correlation ID generator with telemetry tracking
+
 export const generateCorrelationIdWithTelemetry = () => {
   const correlationId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9);
   
-  // Generate and log correlation ID
+  
   const tracer = telemetryTrace.startSpan('correlation_id_generation', 'system');
   
   tracer.setAttributes({
@@ -271,5 +271,5 @@ export const generateCorrelationIdWithTelemetry = () => {
   return correlationId;
 };
 
-// Export telemetry instance
+
 export { telemetry };

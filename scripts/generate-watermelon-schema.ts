@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-// CONFIGURACIÓN
+
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma');
-// Lo guardaremos temporalmente en la raíz del backend para que lo copies
+
 const OUTPUT_PATH = path.join(process.cwd(), 'watermelon-schema-output.js');
 
 console.log('🍉 Generando Esquema de WatermelonDB desde Prisma...');
@@ -16,7 +16,7 @@ try {
   let columns: string[] = [];
   let braceCount = 0;
   
-  // Salida final
+  
   let schemaOutput = `import { appSchema, tableSchema } from '@nozbe/watermelondb'
 
 export const mySchema = appSchema({
@@ -27,21 +27,21 @@ export const mySchema = appSchema({
   for (const line of fileLines) {
     const trimmed = line.trim();
 
-    // 1. Detectar inicio de modelo
+    
     const modelStart = trimmed.match(/^model\s+(\w+)\s+/);
     if (modelStart) {
       currentModel = modelStart[1];
-      tableName = currentModel.toLowerCase(); // Default fallback
+      tableName = currentModel.toLowerCase(); 
       columns = [];
       braceCount = 0;
     }
 
     if (currentModel) {
-      // Control de llaves
+      
       braceCount += (line.match(/{/g) || []).length;
       braceCount -= (line.match(/}/g) || []).length;
 
-      // 2. Detectar nombre real de la tabla @@map("nombre")
+      
       const mapMatch = trimmed.match(/@@map\("([^"]+)"\)/);
       if (mapMatch) {
         tableName = mapMatch[1];
@@ -68,23 +68,23 @@ export const mySchema = appSchema({
         if (!isArray) {
             switch (colType) {
                 case 'String':
-                case 'Uuid': // Prisma usa String para UUID usualmente o tipo custom
-                case 'Json': // Watermelon guarda JSON como string
+                case 'Uuid': 
+                case 'Json': 
                     watermelonType = 'string';
                     break;
                 case 'Int':
                 case 'Float':
                 case 'Decimal':
-                case 'DateTime': // Watermelon usa timestamps (number)
+                case 'DateTime': 
                     watermelonType = 'number';
                     break;
                 case 'Boolean':
                     watermelonType = 'boolean';
                     break;
                 default:
-                    // Si es un tipo enum o relación One-to-One que guarda ID
-                    // Asumimos string si no es un tipo básico conocido (ej: User, Tenant)
-                    // Verificamos si parece una relación por ID (termina en Id)
+                    
+                    
+                    
                     if (colName.endsWith('Id')) {
                         watermelonType = 'string';
                     }
@@ -92,10 +92,10 @@ export const mySchema = appSchema({
             }
 
             if (watermelonType) {
-                // Watermelon requiere que las columnas sean snake_case generalmente si la BD es snake_case
-                // Agregamos la definición
-                if (dbColName !== 'id') { // ID es implícito en Watermelon
-                     // Detectar si es indexado (opcional, por ahora simple)
+                
+                
+                if (dbColName !== 'id') { 
+                     
                      const isIndexed = trimmed.includes('@index') || colName.endsWith('Id');
                      columns.push(`      { name: '${dbColName}', type: '${watermelonType}'${isIndexed ? ', isIndexed: true' : ''} },`);
                 }
@@ -103,9 +103,9 @@ export const mySchema = appSchema({
         }
       }
 
-      // 4. Fin del modelo
+      
       if (braceCount === 0 && columns.length > 0) {
-        // Solo incluimos si tiene deleted_at (es syncable)
+        
         const hasDeletedAt = columns.some(c => c.includes('deleted_at') || c.includes('deletedAt'));
         
         if (hasDeletedAt) {

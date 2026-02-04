@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
 
 generator client {
   provider = "prisma-client-js"
@@ -9,9 +9,9 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================
-// SISTEMA Y MULTI-TENANCY
-// ============================================
+
+
+
 
 model Tenant {
   id        String   @id @default(uuid()) @db.Uuid
@@ -26,7 +26,7 @@ model Tenant {
   city         String? @db.VarChar(100)
   postalCode   String? @db.VarChar(20) @map("postal_code")
   
-  // Suscripción
+  
   subscriptionPlan       String    @default("free") @db.VarChar(50) @map("subscription_plan")
   subscriptionStatus     String    @default("active") @db.VarChar(50) @map("subscription_status")
   subscriptionStartDate  DateTime? @map("subscription_start_date") @db.Timestamp(6)
@@ -34,19 +34,19 @@ model Tenant {
   maxAnimals             Int       @default(100) @map("max_animals")
   maxUsers               Int       @default(5) @map("max_users")
   
-  // Configuración
+  
   timezone String  @default("UTC") @db.VarChar(50)
   currency String  @default("USD") @db.VarChar(10)
   language String  @default("es") @db.VarChar(10)
   settings Json    @default("{}")
   
-  // Auditoría
+  
   isActive  Boolean   @default(true) @map("is_active")
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(6)
   
-  // Relaciones
+  
   users                   User[]
   facilities              Facility[]
   pens                    Pen[]
@@ -125,9 +125,9 @@ model User {
   @@map("users")
 }
 
-// ============================================
-// CATÁLOGOS MAESTROS
-// ============================================
+
+
+
 
 model Breed {
   id                 String   @id @default(uuid()) @db.Uuid
@@ -178,7 +178,7 @@ model Vaccine {
   boosterIntervalDays Int?     @map("booster_interval_days")
   isActive            Boolean  @default(true) @map("is_active")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6) // <--- AGREGAR SI FALTA
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6) 
   deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   vaccinations Vaccination[]
   
@@ -206,9 +206,9 @@ model Disease {
   @@map("diseases")
 }
 
-// ============================================
-// INFRAESTRUCTURA
-// ============================================
+
+
+
 
 model Facility {
   id                  String    @id @default(uuid()) @db.Uuid
@@ -221,7 +221,7 @@ model Facility {
   areaSqm             Decimal?  @map("area_sqm") @db.Decimal(10, 2)
   description         String?   @db.Text
   locationDescription String?   @map("location_description") @db.Text
-  coordinates         String?   @db.Text // Guardar como string "lat,lng"
+  coordinates         String?   @db.Text 
   
   isActive  Boolean   @default(true) @map("is_active")
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
@@ -268,9 +268,9 @@ model Pen {
   @@map("pens")
 }
 
-// ============================================
-// ANIMALES
-// ============================================
+
+
+
 
 model Animal {
   id             String    @id @default(uuid()) @db.Uuid
@@ -431,9 +431,9 @@ model BatchAnimal {
   @@map("batch_animals")
 }
 
-// ============================================
-// REPRODUCCIÓN
-// ============================================
+
+
+
 
 model BreedingService {
   id                   String   @id @default(uuid()) @db.Uuid
@@ -534,9 +534,9 @@ model Weaning {
   @@map("weanings")
 }
 
-// ============================================
-// SANIDAD
-// ============================================
+
+
+
 
 model HealthRecord {
   id              String   @id @default(uuid()) @db.Uuid
@@ -646,9 +646,9 @@ model MortalityRecord {
 
   @@map("mortality_records")
 }
-// ============================================
-// ALIMENTACIÓN
-// ============================================
+
+
+
 model FeedType {
   id                   String   @id @default(uuid()) @db.Uuid
   tenantId             String   @map("tenant_id") @db.Uuid
@@ -740,9 +740,9 @@ model FeedConsumption {
   @@index([tenantId, consumptionDate])
   @@map("feed_consumption")
 }
-// ============================================
-// FINANCIERO
-// ============================================
+
+
+
 model TransactionCategory {
   id                 String    @id @default(uuid()) @db.Uuid
   tenantId           String    @map("tenant_id") @db.Uuid
@@ -833,9 +833,9 @@ model AnimalSaleDetail {
 
   @@map("animal_sale_details")
 }
-// ============================================
-// TAREAS
-// ============================================
+
+
+
 model Task {
   id              String    @id @default(uuid()) @db.Uuid
   tenantId        String    @map("tenant_id") @db.Uuid
@@ -871,9 +871,9 @@ model Task {
   @@index([assignedTo, status])
   @@map("tasks")
 }
-// ============================================
-// MÉTRICAS Y REPORTES
-// ============================================
+
+
+
 model DailyMetric {
   id                 String   @id @default(uuid()) @db.Uuid
   tenantId           String   @map("tenant_id") @db.Uuid
@@ -896,9 +896,9 @@ model DailyMetric {
   @@unique([tenantId, metricDate])
   @@map("daily_metrics")
 }
-// ============================================
-// NOTIFICACIONES
-// ============================================
+
+
+
 model Notification {
   id                String    @id @default(uuid()) @db.Uuid
   tenantId          String    @map("tenant_id") @db.Uuid
@@ -920,9 +920,9 @@ model Notification {
   @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
-// ============================================
-// AUDITORÍA
-// ============================================
+
+
+
 model AuditLog {
   id         String    @id @default(uuid()) @db.Uuid
   tenantId   String?   @map("tenant_id") @db.Uuid

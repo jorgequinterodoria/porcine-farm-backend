@@ -5,7 +5,7 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Protect all sync routes
+
 router.use(authenticate);
 
 /**

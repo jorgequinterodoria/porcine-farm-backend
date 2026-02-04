@@ -3,10 +3,10 @@ import { tenantService } from '../services/tenant.service';
 import { asyncHandler } from '../middlewares/errorHandler.middleware';
 
 export class TenantController {
-    /**
-     * POST /api/tenants
-     * Crear nueva granja y su administrador
-     */
+    
+
+
+
     create = asyncHandler(async (req: Request, res: Response) => {
         const result = await tenantService.createTenantWithAdmin(req.body);
 
@@ -17,10 +17,10 @@ export class TenantController {
         });
     });
 
-    /**
-     * GET /api/tenants/stats/global
-     * Obtener estadísticas globales y comparativas
-     */
+    
+
+
+
     getGlobalStats = asyncHandler(async (req: Request, res: Response) => {
         const stats = await tenantService.getGlobalStats();
 
@@ -30,10 +30,10 @@ export class TenantController {
         });
     });
 
-    /**
-     * GET /api/tenants
-     * Obtener todas las granjas
-     */
+    
+
+
+
     getAll = asyncHandler(async (req: Request, res: Response) => {
         const tenants = await tenantService.findAll();
 
@@ -43,10 +43,10 @@ export class TenantController {
         });
     });
 
-    /**
-     * GET /api/tenants/:id
-     * Obtener una granja por ID
-     */
+    
+
+
+
     getOne = asyncHandler(async (req: Request, res: Response) => {
         const tenant = await tenantService.findOne(req.params.id as string);
 
@@ -56,10 +56,10 @@ export class TenantController {
         });
     });
 
-    /**
-     * PUT /api/tenants/:id
-     * Actualizar una granja
-     */
+    
+
+
+
     update = asyncHandler(async (req: Request, res: Response) => {
         const tenant = await tenantService.update(req.params.id as string, req.body);
 
@@ -70,10 +70,10 @@ export class TenantController {
         });
     });
 
-    /**
-     * DELETE /api/tenants/:id
-     * Eliminar una granja
-     */
+    
+
+
+
     delete = asyncHandler(async (req: Request, res: Response) => {
         const result = await tenantService.delete(req.params.id as string);
 

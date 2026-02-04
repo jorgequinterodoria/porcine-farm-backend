@@ -4,7 +4,7 @@ import { AppError } from '../../../src/middlewares/errorHandler.middleware';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-// Mock dependencies
+
 jest.mock('../../../src/config/database', () => ({
   prisma: {
     user: {
@@ -48,7 +48,7 @@ describe('AuthService', () => {
     };
 
     it('should register a new user with tenant successfully', async () => {
-      // Mocks
+      
       mockPrisma.user.findFirst.mockResolvedValue(null);
       mockPrisma.tenant.findUnique.mockResolvedValue(null);
       mockBcrypt.hash.mockResolvedValue('hashedpassword');

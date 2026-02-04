@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { loggers, LogUtils } from '../config/logger';
 
-// Health check middleware
+
 export const healthCheckMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const { check } = HealthLogger;
   const logger = loggers.app;
@@ -61,17 +61,17 @@ export const healthCheckMiddleware = (req: Request, res: Response, next: NextFun
   }
 };
 
-// Database health check
+
 export const databaseHealthCheck = () => {
   const logger = loggers.database;
   
   try {
-    // Check database connection
+    
     const startTime = Date.now();
     
-    // This would need to be implemented with your actual database client
+    
     const result = await new Promise((resolve) => {
-      // Simulate database health check
+      
       setTimeout(() => {
         resolve({
           connected: true,
@@ -97,10 +97,10 @@ export const databaseHealthCheck = () => {
   }
 };
 
-// Logger health check
+
 export const loggingHealthCheck = () => {
   try {
-    // Check if log files are being written
+    
     const testMessage = 'Health check at ' + new Date().toISOString();
     loggers.app.info(testMessage);
     
@@ -118,7 +118,7 @@ export const loggingHealthCheck = () => {
   }
 };
 
-// Health Logger
+
 export class HealthLogger {
   check = async (): Promise<{
     healthy: boolean;
@@ -138,11 +138,11 @@ export class HealthLogger {
   }
 }
 
-// Enhanced performance monitoring
+
 export const AdvancedPerformanceMonitor = {
-  // Track slow queries with detailed metrics
+  
   trackSlowQuery: (query: string, duration: number, params: any = {}) => {
-    const threshold = 1000; // 1 second
+    const threshold = 1000; 
     
     if (duration > threshold) {
       loggers.performance.logPerformance('SLOW_QUERY_DETECTED', duration, true, {
@@ -154,7 +154,7 @@ export const AdvancedPerformanceMonitor = {
     }
   },
 
-  // Track database connection pool
+  
   trackDatabaseConnections: (active: number, available: number, maxConnections: number) => {
     const utilization = (active / maxConnections) * 100;
     
@@ -167,7 +167,7 @@ export const AdvancedPerformanceMonitor = {
     });
   },
 
-  // Track memory usage
+  
   trackMemoryUsage: () => {
     const memory = process.memoryUsage();
     const heapUsedMB = Math.round(memory.heapUsed / 1024 / 1024);
@@ -183,7 +183,7 @@ export const AdvancedPerformanceMonitor = {
     });
   },
 
-  // API performance metrics
+  
   trackApiPerformance: (method: string, route: string, statusCode: number, responseTime: number, responseSize: number) => {
     loggers.performance.logPerformance('API_PERFORMANCE', responseTime, true, {
       method,

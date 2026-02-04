@@ -27,7 +27,7 @@ router.get('/:id', animalController.getOne);
 router.put('/:id', validate(updateAnimalSchema), animalController.update);
 router.delete('/:id', animalController.delete);
 
-// Acciones especiales
+
 router.post('/:id/weight', validate(recordWeightSchema), animalController.recordWeight);
 router.post('/:id/movement', validate(recordMovementSchema), animalController.recordMovement);
 

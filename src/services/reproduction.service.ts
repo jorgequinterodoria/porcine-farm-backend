@@ -8,7 +8,7 @@ import {
 } from '../types/reproduction.types';
 
 export class ReproductionService {
-    // --- Breeding Services ---
+    
     async createBreeding(tenantId: string, data: CreateBreedingServiceDTO) {
         const female = await prisma.animal.findFirst({
             where: { id: data.femaleId, tenantId, sex: 'female' }
@@ -28,7 +28,7 @@ export class ReproductionService {
         });
     }
 
-    // --- Pregnancies ---
+    
     async createPregnancy(tenantId: string, data: CreatePregnancyDTO) {
         const animal = await prisma.animal.findFirst({ where: { id: data.animalId, tenantId } });
         if (!animal) throw new AppError('Animal not found', 404);
@@ -46,7 +46,7 @@ export class ReproductionService {
         });
     }
 
-    // --- Farrowing (Partos) ---
+    
     async createFarrowing(tenantId: string, data: CreateFarrowingDTO) {
         const pregnancy = await prisma.pregnancy.findFirst({
             where: { id: data.pregnancyId, tenantId, pregnancyStatus: 'confirmed' }
@@ -67,7 +67,7 @@ export class ReproductionService {
         });
     }
 
-    // --- Weaning (Destete) ---
+    
     async createWeaning(tenantId: string, data: CreateWeaningDTO) {
         const farrowing = await prisma.farrowing.findFirst({
             where: { id: data.farrowingId, tenantId }

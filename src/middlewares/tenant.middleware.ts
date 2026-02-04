@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError, asyncHandler } from './errorHandler.middleware';
 import { prisma } from '../config/database';
 
-// Extender Request para incluir tenant
+
 declare global {
   namespace Express {
     interface Request {
@@ -19,10 +19,10 @@ declare global {
   }
 }
 
-// Middleware para cargar información del tenant
+
 export const loadTenant = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    // El tenant se obtiene del usuario autenticado
+    
     if (!req.user) {
       throw new AppError('Authentication required', 401);
     }
@@ -46,7 +46,7 @@ export const loadTenant = asyncHandler(
       throw new AppError('Tenant not found or inactive', 403);
     }
 
-    // Verificar estado de suscripción
+    
     if (tenant.subscriptionStatus !== 'active') {
       throw new AppError(
         'Your subscription is not active. Please contact support.',
@@ -59,7 +59,7 @@ export const loadTenant = asyncHandler(
   }
 );
 
-// Middleware para verificar límites del plan
+
 export const checkPlanLimits = (resource: 'animals' | 'users') => {
   return asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
@@ -108,7 +108,7 @@ export const checkPlanLimits = (resource: 'animals' | 'users') => {
   );
 };
 
-// Middleware para asegurar aislamiento de datos por tenant
+
 export const ensureTenantIsolation = (
   req: Request,
   res: Response,
@@ -118,12 +118,12 @@ export const ensureTenantIsolation = (
     throw new AppError('Authentication required', 401);
   }
 
-  // Agregar automáticamente el tenantId a los queries y mutations
-  // Este es un safeguard adicional
+  
+  
   const originalJson = res.json;
   
   res.json = function(data: any) {
-    // Aquí podrías agregar lógica adicional si es necesario
+    
     return originalJson.call(this, data);
   };
 

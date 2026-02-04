@@ -13,7 +13,7 @@ export const createTenantSchema = z.object({
         subscriptionPlan: z.enum(['free', 'basic', 'premium', 'enterprise']).default('free'),
         maxAnimals: z.number().int().positive().optional(),
         maxUsers: z.number().int().positive().optional(),
-        // Admin fields
+        
         adminFirstName: z.string().min(2),
         adminLastName: z.string().min(2),
         adminEmail: z.string().email(),

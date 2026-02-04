@@ -8,13 +8,13 @@ import {
 } from '../types/batch.types';
 
 export class BatchService {
-    /**
-     * Crear un nuevo lote
-     */
+    
+
+
     async create(tenantId: string, data: CreateBatchDTO) {
         const { startDate, expectedEndDate, ...otherData } = data;
 
-        // Verificar si el código ya existe
+        
         const existing = await prisma.batch.findFirst({
             where: { tenantId, code: data.code }
         });
@@ -34,9 +34,9 @@ export class BatchService {
         });
     }
 
-    /**
-     * Obtener todos los lotes
-     */
+    
+
+
     async findAll(tenantId: string) {
         return prisma.batch.findMany({
             where: { tenantId },
@@ -49,9 +49,9 @@ export class BatchService {
         });
     }
 
-    /**
-     * Obtener un lote por ID
-     */
+    
+
+
     async findOne(tenantId: string, id: string) {
         const batch = await prisma.batch.findFirst({
             where: { id, tenantId },
@@ -77,9 +77,9 @@ export class BatchService {
         return batch;
     }
 
-    /**
-     * Actualizar lote
-     */
+    
+
+
     async update(tenantId: string, id: string, data: UpdateBatchDTO) {
         const batch = await this.findOne(tenantId, id);
 
@@ -96,13 +96,13 @@ export class BatchService {
         });
     }
 
-    /**
-     * Agregar animal al lote
-     */
+    
+
+
     async addAnimal(tenantId: string, batchId: string, data: BatchAnimalDTO) {
         const batch = await this.findOne(tenantId, batchId);
 
-        // Verificar si el animal ya está en el lote (activo)
+        
         const existing = await prisma.batchAnimal.findFirst({
             where: {
                 batchId: batch.id,
@@ -125,7 +125,7 @@ export class BatchService {
                 }
             });
 
-            // Actualizar contador actual del lote
+            
             await tx.batch.update({
                 where: { id: batch.id },
                 data: { currentCount: { increment: 1 } }
@@ -135,9 +135,9 @@ export class BatchService {
         });
     }
 
-    /**
-     * Remover animal del lote
-     */
+    
+
+
     async removeAnimal(tenantId: string, batchId: string, data: RemoveBatchAnimalDTO) {
         const batch = await this.findOne(tenantId, batchId);
 
@@ -162,7 +162,7 @@ export class BatchService {
                 }
             });
 
-            // Actualizar contador actual del lote
+            
             await tx.batch.update({
                 where: { id: batch.id },
                 data: { currentCount: { decrement: 1 } }

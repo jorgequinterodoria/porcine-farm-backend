@@ -12,7 +12,7 @@ import { setupSwagger } from './config/swagger';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares globales
+
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
@@ -33,20 +33,20 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeInput);
 
-// Serve static files
+
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Routes
+
 app.use('/api', routes);
 
-// Swagger Documentation
+
 if (process.env.NODE_ENV !== 'production') {
   setupSwagger(app).catch(err => {
     console.error('Failed to setup Swagger:', err);
   });
 }
 
-// Health check
+
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -56,7 +56,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 404 handler
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -64,7 +64,7 @@ app.use((req, res) => {
   });
 });
 
-// Error handler (debe ser el último middleware)
+
 app.use(errorHandler);
 
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {

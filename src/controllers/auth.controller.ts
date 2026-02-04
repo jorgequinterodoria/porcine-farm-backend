@@ -300,8 +300,8 @@ export class AuthController {
    *         description: Logout successful
    */
   logout = asyncHandler(async (req: Request, res: Response) => {
-    // En un sistema con tokens JWT stateless, el logout se maneja en el cliente
-    // Si quisieras implementar un blacklist de tokens, lo harías aquí
+    
+    
 
     res.status(200).json({
       success: true,

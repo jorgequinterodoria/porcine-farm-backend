@@ -9,7 +9,7 @@ interface JwtPayload {
   role: string;
 }
 
-// Extender Request de Express para incluir user
+
 declare global {
   namespace Express {
     interface Request {
@@ -27,7 +27,7 @@ declare global {
 
 export const authenticate = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    // 1. Obtener token del header
+    
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -36,7 +36,7 @@ export const authenticate = asyncHandler(
 
     const token = authHeader.split(' ')[1];
 
-    // 2. Verificar token
+    
     let decoded: JwtPayload;
     try {
       decoded = jwt.verify(
@@ -47,7 +47,7 @@ export const authenticate = asyncHandler(
       throw new AppError('Invalid or expired token', 401);
     }
 
-    // 3. Verificar que el usuario existe y está activo
+    
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -66,7 +66,7 @@ export const authenticate = asyncHandler(
       throw new AppError('User not found or inactive', 401);
     }
 
-    // 4. Adjuntar usuario al request
+    
     req.user = {
       id: user.id,
       tenantId: user.tenantId,
@@ -76,17 +76,17 @@ export const authenticate = asyncHandler(
       lastName: user.lastName
     };
 
-    // Actualizar last_login (opcional, puede afectar performance)
-    // prisma.user.update({
-    //   where: { id: user.id },
-    //   data: { lastLogin: new Date() }
-    // }).catch(console.error); // Fire and forget
+    
+    
+    
+    
+    
 
     next();
   }
 );
 
-// Middleware para verificar roles específicos
+
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
@@ -104,7 +104,7 @@ export const authorize = (...roles: string[]) => {
   };
 };
 
-// Middleware para verificar si es super admin
+
 export const isSuperAdmin = (
   req: Request,
   res: Response,
@@ -121,7 +121,7 @@ export const isSuperAdmin = (
   next();
 };
 
-// Middleware para verificar si es admin de la granja o superior
+
 export const isFarmAdminOrAbove = (
   req: Request,
   res: Response,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Schema para registro
+
 export const registerSchema = z.object({
     body: z.object({
         email: z
@@ -47,7 +47,7 @@ export const registerSchema = z.object({
             .optional()
             .default('operator'),
 
-        // Datos del tenant (solo para el primer usuario)
+        
         tenantName: z
             .string()
             .min(2, 'Tenant name must be at least 2 characters')
@@ -68,7 +68,7 @@ export const registerSchema = z.object({
     })
 });
 
-// Schema para login
+
 export const loginSchema = z.object({
     body: z.object({
         email: z
@@ -87,7 +87,7 @@ export const loginSchema = z.object({
     })
 });
 
-// Schema para cambio de contraseña
+
 export const changePasswordSchema = z.object({
     body: z.object({
         currentPassword: z
@@ -114,7 +114,7 @@ export const changePasswordSchema = z.object({
     )
 });
 
-// Schema para solicitar reset de contraseña
+
 export const resetPasswordRequestSchema = z.object({
     body: z.object({
         email: z
@@ -127,7 +127,7 @@ export const resetPasswordRequestSchema = z.object({
     })
 });
 
-// Schema para resetear contraseña
+
 export const resetPasswordSchema = z.object({
     body: z.object({
         token: z
@@ -148,7 +148,7 @@ export const resetPasswordSchema = z.object({
     })
 });
 
-// Schema para invitar usuario
+
 export const inviteUserSchema = z.object({
     body: z.object({
         email: z

@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { loggers, LogUtils } from '../config/logger';
 
-// Logging middleware factory
+
 export const createLoggingMiddleware = (module: string = 'http-request') => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Add request start time
+    
     const startTime = Date.now();
     const correlationId = LogUtils.generateCorrelationId();
     
-    // Extract user info for context
+    
     const userContext = LogUtils.extractUserInfo(req);
     
-    // Create logger with request context
+    
     const logger = loggers.request.withContext({
       requestId: correlationId,
       method: req.method,
@@ -21,13 +21,13 @@ export const createLoggingMiddleware = (module: string = 'http-request') => {
       ...userContext,
     });
     
-    // Log request start
+    
     logger.info(`Request started: ${req.method} ${req.path}`, {
       headers: req.headers,
       body: req.body,
     });
     
-    // Intercept response to capture timing
+    
     const originalSend = res.send;
     const originalJson = res.json;
     
@@ -63,7 +63,7 @@ export const createLoggingMiddleware = (module: string = 'http-request') => {
       originalJson.call(this, data);
     };
     
-    // Handle response finish
+    
     res.on('finish', () => {
       if (!responseSent) {
         const responseTime = LogUtils.calculateResponseTime(startTime);
@@ -79,20 +79,20 @@ export const createLoggingMiddleware = (module: string = 'http-request') => {
   };
 };
 
-// Performance monitoring middleware
+
 export const performanceMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
     const logger = loggers.performance.withContext(LogUtils.extractUserInfo(req));
     
-    // Intercept response to measure performance
+    
     const originalSend = res.send;
     const originalJson = res.json;
     
     res.send = function(data) {
       const responseTime = LogUtils.calculateResponseTime(startTime);
       
-      // Log slow responses
+      
       LogUtils.logSlowApi(req.path, req.method, res.statusCode, responseTime);
       
       originalSend.call(this, data);
@@ -101,7 +101,7 @@ export const performanceMiddleware = () => {
     res.json = function(data) {
       const responseTime = LogUtils.calculateResponseTime(startTime);
       
-      // Log slow responses
+      
       LogUtils.logSlowApi(req.path, req.method, res.statusCode, responseTime);
       
       originalJson.call(this, data);
@@ -111,7 +111,7 @@ export const performanceMiddleware = () => {
   };
 };
 
-// Error logging middleware
+
 export const errorLoggingMiddleware = () => {
   return (error: Error, req: Request, res: Response, next: NextFunction) => {
     const logger = loggers.app.withContext(LogUtils.extractUserInfo(req));
@@ -126,10 +126,10 @@ export const errorLoggingMiddleware = () => {
   };
 };
 
-// Rate limiting logging middleware
+
 export const rateLimitLoggingMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Listen for rate limit headers
+    
     res.on('finish', () => {
       const rateLimitHeaders = {
         'X-RateLimit-Limit': res.getHeader('X-RateLimit-Limit'),
@@ -149,7 +149,7 @@ export const rateLimitLoggingMiddleware = () => {
   };
 };
 
-// Database operation logging utility
+
 export const dbOperationLogger = (operation: string, table: string) => {
   return async (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor.value;

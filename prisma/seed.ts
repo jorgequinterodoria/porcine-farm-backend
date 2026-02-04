@@ -13,7 +13,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     console.log('🌱 Starting seed...');
 
-    // 1. Crear Tenant del Sistema (para el Superadmin)
+    
     const systemTenant = await prisma.tenant.upsert({
         where: { subdomain: 'system' },
         update: {},
@@ -28,7 +28,7 @@ async function main() {
 
     console.log('✅ System tenant created/verified');
 
-    // 2. Crear Superadmin
+    
     const superadminEmail = 'jquintedori@gmail.com';
     const hashedPassword = await bcrypt.hash('FJ-3V&tzm', 10);
 
@@ -57,7 +57,7 @@ async function main() {
 
     console.log('✅ Superadmin user created/verified');
 
-    // 3. Crear razas
+    
     const breeds = [
         { code: 'DUR', name: 'Duroc', description: 'Raza americana conocida por su carne de calidad', originCountry: 'Estados Unidos' },
         { code: 'YORK', name: 'Yorkshire', description: 'Excelente para producción de carne magra', originCountry: 'Reino Unido' },

@@ -2,7 +2,7 @@ import { prisma } from '../config/database';
 import { CreateTaskDTO, UpdateTaskStatusDTO } from '../types/operations.types';
 
 export class OperationService {
-    // --- Tasks ---
+    
     async createTask(tenantId: string, data: CreateTaskDTO, creatorId: string) {
         const { assignedToId, ...rest } = data;
         return prisma.task.create({
@@ -37,7 +37,7 @@ export class OperationService {
         });
     }
 
-    // --- Notifications ---
+    
     async getNotifications(userId: string) {
         return prisma.notification.findMany({
             where: { userId },
@@ -46,7 +46,7 @@ export class OperationService {
         });
     }
 
-    // --- Audit Logs ---
+    
     async registerLog(tenantId: string, userId: string, action: string, entity: string, entityId: string, details?: any) {
         return prisma.auditLog.create({
             data: {

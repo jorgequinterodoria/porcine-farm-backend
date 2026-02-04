@@ -1,5 +1,5 @@
-// ⚠️ ESTE ARCHIVO ES GENERADO AUTOMÁTICAMENTE.
-// No lo edites manualmente. Ejecuta: npx tsx scripts/generate-sync-map.ts
+
+
 
 export const SYNC_MODEL_MAP = {
   "Tenant": "tenants",

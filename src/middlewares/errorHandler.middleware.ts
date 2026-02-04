@@ -20,18 +20,18 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // Default error
+  
   let statusCode = 500;
   let message = 'Internal server error';
   let errors: any = undefined;
 
-  // Operational errors (custom AppError)
+  
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
   }
   
-  // Prisma errors
+  
   else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     statusCode = 400;
     
@@ -67,14 +67,14 @@ export const errorHandler = (
     }
   }
   
-  // Prisma validation errors
+  
   else if (err instanceof Prisma.PrismaClientValidationError) {
     statusCode = 400;
     message = 'Validation error';
     errors = { details: err.message };
   }
   
-  // JWT errors
+  
   else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';
@@ -85,19 +85,19 @@ export const errorHandler = (
     message = 'Token expired';
   }
   
-  // Validation errors (from zod or other validators)
+  
   else if (err.name === 'ZodError') {
     statusCode = 400;
     message = 'Validation error';
     errors = (err as any).errors;
   }
 
-  // Log error in development
+  
   if (process.env.NODE_ENV === 'development') {
     console.error('❌ Error:', err);
   }
 
-  // Send response
+  
   res.status(statusCode).json({
     success: false,
     message,
@@ -106,7 +106,7 @@ export const errorHandler = (
   });
 };
 
-// Async handler wrapper
+
 export const asyncHandler = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) => {

@@ -1,4 +1,4 @@
-// Jest configuration for backend testing
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',

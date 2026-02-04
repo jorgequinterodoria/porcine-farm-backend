@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-// CONFIGURACIÓN
+
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma');
 const OUTPUT_DIR = path.join(process.cwd(), 'watermelon-models-out');
 
@@ -17,7 +17,7 @@ try {
   let currentModel: string | null = null;
   let tableName: string | null = null;
   let fieldLines: string[] = [];
-  let imports: Set<string> = new Set(['Model']); // Siempre importamos Model
+  let imports: Set<string> = new Set(['Model']); 
   let decorators: Set<string> = new Set([]); 
   let braceCount = 0;
   
@@ -26,11 +26,11 @@ try {
   for (const line of fileLines) {
     const trimmed = line.trim();
 
-    // 1. Detectar inicio de modelo
+    
     const modelStart = trimmed.match(/^model\s+(\w+)\s+/);
     if (modelStart) {
       currentModel = modelStart[1];
-      tableName = currentModel.toLowerCase(); // Fallback
+      tableName = currentModel.toLowerCase(); 
       fieldLines = [];
       imports = new Set(['Model']);
       decorators = new Set([]);
@@ -41,7 +41,7 @@ try {
       braceCount += (line.match(/{/g) || []).length;
       braceCount -= (line.match(/}/g) || []).length;
 
-      // 2. Detectar nombre real de la tabla @@map("nombre")
+      
       const mapMatch = trimmed.match(/@@map\("([^"]+)"\)/);
       if (mapMatch) {
         tableName = mapMatch[1];
@@ -61,10 +61,10 @@ try {
         const mapColMatch = trimmed.match(/@map\("([^"]+)"\)/);
         const dbColName = mapColMatch ? mapColMatch[1] : propName;
 
-        // Ignoramos relaciones (arrays o tipos que no son básicos) salvo que sean IDs
+        
         const isRelation = !['String', 'Boolean', 'Int', 'Float', 'Decimal', 'DateTime', 'Json', 'Bytes', 'BigInt'].includes(prismaType);
 
-        // Si es el ID principal, Watermelon lo maneja interno, no lo declaramos
+        
         if (dbColName !== 'id' && !isArray && !isRelation) {
             
             let decorator = '';
@@ -83,12 +83,12 @@ try {
                     tsType = 'number';
                     break;
                 case 'Boolean':
-                    decorator = 'field'; // O 'writer'? No, field está bien.
+                    decorator = 'field'; 
                     tsType = 'boolean';
                     break;
                 case 'DateTime':
                     decorator = 'date';
-                    tsType = 'number'; // Watermelon dates are timestamps
+                    tsType = 'number'; 
                     break;
                 case 'Json':
                     decorator = 'json';
@@ -99,45 +99,45 @@ try {
                     tsType = 'any';
             }
 
-            // Manejo de readonly para fechas de auditoría
+            
             const isReadOnly = ['created_at', 'updated_at', 'createdAt', 'updatedAt'].includes(dbColName);
             if (isReadOnly) {
                 imports.add('readonly');
-                decorator = 'readonly @' + decorator; // Truco para añadir el readonly antes
+                decorator = 'readonly @' + decorator; 
             }
 
-            // Agregamos a los sets
+            
             if (decorator.includes('readonly')) {
                  decorators.add('readonly');
-                 decorators.add(decorator.split('@')[1]); // el tipo real (date, text)
+                 decorators.add(decorator.split('@')[1]); 
             } else {
                  decorators.add(decorator);
             }
 
-            // Generar línea de código
-            // @text('column_name') propName!: string
             
-            // Si usamos readonly, el formato es @readonly @date(...)
+            
+            
+            
             const finalDecorator = isReadOnly 
                 ? `@readonly @${decorator.split('@')[1]}('${dbColName}')` 
                 : `@${decorator}('${dbColName}')`;
 
             fieldLines.push(`  ${finalDecorator} ${propName}${isOptional ? '?' : '!'}: ${tsType}`);
         } else if (propName.endsWith('Id') && propName !== 'id') {
-            // Es una Foreign Key (ej: tenantId)
-            // La tratamos como texto/campo simple para asegurar que se sincronice el ID
+            
+            
             decorators.add('text');
             fieldLines.push(`  @text('${dbColName}') ${propName}!: string`);
         }
       }
 
-      // 4. Fin del modelo - Escribir archivo
+      
       if (braceCount === 0 && fieldLines.length > 0) {
         
-        // Verificar si es tabla syncable (tiene deletedAt)
+        
         const content = fieldLines.join('\n');
-        // Si no tiene deletedAt en los campos procesados, probablemente no es syncable (o no lo detectamos bien)
-        // Pero asumiremos que el usuario filtrará manual si sobra algo.
+        
+        
 
         const decoratorImports = Array.from(decorators).join(', ');
         
@@ -158,7 +158,7 @@ ${content}
     }
   }
 
-  // Generar index.ts
+  
   const indexContent = generatedFiles.map(m => `export { default as ${m} } from './${m}'`).join('\n');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.ts'), indexContent);
 

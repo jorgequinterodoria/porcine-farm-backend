@@ -2,7 +2,7 @@ import request from 'supertest';
 import { app } from '../../../src/index';
 import { animalService } from '../../../src/services/animal.service';
 
-// Mock the animal service for controller testing
+
 jest.mock('../../../src/services/animal.service', () => ({
   animalService: {
     create: jest.fn(),
@@ -17,7 +17,7 @@ jest.mock('../../../src/services/animal.service', () => ({
 
 const mockAnimalService = animalService as jest.Mocked<typeof animalService>;
 
-// Mock auth middleware
+
 const mockUser = {
   id: 'user-1',
   tenantId: 'tenant-1',
@@ -74,7 +74,7 @@ describe('Animal Controller Integration Tests', () => {
     it('should return 400 for invalid data', async () => {
       const invalidData = {
         internalCode: 'ANIMAL-001',
-        // Missing required fields
+        
       };
 
       const response = await request(app)
@@ -265,7 +265,7 @@ describe('Animal Controller Integration Tests', () => {
 
     it('should return 400 for invalid weight data', async () => {
       const invalidWeightData = {
-        weightKg: -10, // Invalid negative weight
+        weightKg: -10, 
         measurementDate: '2024-01-15',
       };
 

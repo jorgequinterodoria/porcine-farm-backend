@@ -6,7 +6,7 @@ import { createTenantSchema, updateTenantSchema } from '../validators/tenant.val
 
 const router = Router();
 
-// Todas las rutas de tenants requieren ser Super Admin
+
 router.use(authenticate);
 router.use(isSuperAdmin);
 

@@ -8,12 +8,12 @@ const router = Router();
 
 router.use(authenticate);
 
-// Tasks
+
 router.post('/tasks', validate(createTaskSchema), operationController.createTask);
 router.get('/tasks', operationController.getTasks);
 router.patch('/tasks/:id/status', validate(updateTaskStatusSchema), operationController.updateTask);
 
-// Notifications
+
 router.get('/notifications', operationController.getNotifications);
 
 export default router;

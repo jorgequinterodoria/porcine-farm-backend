@@ -1,6 +1,6 @@
 import pino, { DestinationStream, LoggerOptions } from 'pino';
 
-// Structured logging interface
+
 export interface LogContext {
   requestId?: string;
   tenantId?: string;
@@ -32,10 +32,10 @@ export interface PerformanceMetrics {
   metadata?: Record<string, any>;
 }
 
-// Pino logger configuration
+
 const pinoConfig: LoggerOptions = {
   level: process.env.LOG_LEVEL || 'info',
-  // Enable pretty printing in development
+  
   transport: process.env.NODE_ENV === 'development' 
     ? {
         target: 'pino-pretty',
@@ -46,7 +46,7 @@ const pinoConfig: LoggerOptions = {
         },
       }
     : 
-      // JSON structured logging for production
+      
       {
         target: 'pino/file',
         options: {
@@ -56,16 +56,16 @@ const pinoConfig: LoggerOptions = {
         },
       },
   
-  // Base configuration
+  
   base: {
     pid: process.pid,
     hostname: require('os').hostname(),
     level: process.env.LOG_LEVEL || 'info',
   },
   
-  // Custom serializers
+  
   serializers: {
-    // Sanitize error objects
+    
     error: (err: Error) => ({
       message: err.message,
       stack: err.stack,
@@ -73,7 +73,7 @@ const pinoConfig: LoggerOptions = {
       code: (err as any).code,
     }),
     
-    // Sanitize request objects
+    
     req: (req: any) => ({
       method: req.method,
       url: req.url,
@@ -85,14 +85,14 @@ const pinoConfig: LoggerOptions = {
       userAgent: req.get('User-Agent'),
     }),
     
-    // Sanitize response objects
+    
     res: (res: any) => ({
       statusCode: res.statusCode,
       responseTime: res.responseTime,
     }),
   },
   
-  // Redact sensitive data in production
+  
   redact: process.env.NODE_ENV === 'production' 
     ? [
         'req.headers.authorization',
@@ -106,10 +106,10 @@ const pinoConfig: LoggerOptions = {
     : [],
 };
 
-// Create base logger instance
+
 export const logger = pino(pinoConfig);
 
-// Logger factory with context
+
 export class StructuredLogger {
   private context: LogContext = {};
   private operationTimers: Map<string, number> = new Map();
@@ -119,25 +119,25 @@ export class StructuredLogger {
     this.context = { ...context };
   }
 
-  // Update context
+  
   withContext(context: Partial<LogContext>): StructuredLogger {
     return new StructuredLogger({ ...this.context, ...context });
   }
 
-  // Add performance timer
+  
   startTimer(operation: string): StructuredLogger {
     this.operationTimers.set(operation, Date.now());
     return this.withContext({ operation });
   }
 
-  // End timer and log performance
+  
   endTimer(success: boolean = true, metadata: Record<string, any> = {}): void {
     const lastOperation = this.context.operation;
     if (lastOperation && this.operationTimers.has(lastOperation)) {
       const startTime = this.operationTimers.get(lastOperation)!;
       const duration = Date.now() - startTime;
       
-      // Log performance metric
+      
       this.performanceMetrics.push({
         name: lastOperation,
         duration,
@@ -145,7 +145,7 @@ export class StructuredLogger {
         metadata,
       });
       
-      // Auto-generate performance log
+      
       this.info(`Operation ${lastOperation} completed`, {
         ...this.context,
         operation: lastOperation,
@@ -158,7 +158,7 @@ export class StructuredLogger {
     }
   }
 
-  // Log levels with context
+  
   debug(message: string, extra: Partial<LogContext> = {}): void {
     this.logger.debug(message, {
       ...this.context,
@@ -209,7 +209,7 @@ export class StructuredLogger {
     });
   }
 
-  // Security logging
+  
   logSecurity(event: string, details: Record<string, any> = {}): void {
     this.warn(`Security Event: ${event}`, {
       ...this.context,
@@ -218,7 +218,7 @@ export class StructuredLogger {
     });
   }
 
-  // Performance logging
+  
   logPerformance(operation: string, duration: number, success: boolean, metadata: Record<string, any> = {}): void {
     this.performanceMetrics.push({
       name: operation,
@@ -236,58 +236,58 @@ export class StructuredLogger {
     });
   }
 
-  // Get performance metrics
+  
   getPerformanceMetrics(): PerformanceMetrics[] {
     return [...this.performanceMetrics];
   }
 
-  // Clear metrics
+  
   clearMetrics(): void {
     this.performanceMetrics = [];
   }
 }
 
-// Default logger instances
+
 export const loggers = {
-  // Application logger
+  
   app: new StructuredLogger({
     module: 'application',
   }),
 
-  // Database logger
+  
   database: new StructuredLogger({
     module: 'database',
   }),
 
-  // Security logger
+  
   security: new StructuredLogger({
     module: 'security',
   }),
 
-  // Performance logger
+  
   performance: new StructuredLogger({
     module: 'performance',
   }),
 
-  // Request logger for HTTP
+  
   request: new StructuredLogger({
     module: 'http-request',
   }),
 
-  // Auth logger for authentication events
+  
   auth: new StructuredLogger({
     module: 'authentication',
   }),
 };
 
-// Log utilities
+
 export const LogUtils = {
-  // Generate correlation ID
+  
   generateCorrelationId(): string {
     return `corr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   },
 
-  // Extract user info from request
+  
   extractUserInfo(req: any): Partial<LogContext> => {
     return {
       userId: req.user?.id,
@@ -298,12 +298,12 @@ export const LogUtils = {
     };
   },
 
-  // Calculate response time
+  
   calculateResponseTime(startTime: number): number {
     return Date.now() - startTime;
   },
 
-  // Format error for logging
+  
   formatError(error: Error): any {
     return {
       name: error.name,
@@ -313,7 +313,7 @@ export const LogUtils = {
     };
   },
 
-  // Rate limit warning
+  
   logRateLimit(req: any, limit: number, window: number): void {
     loggers.security.logSecurity('RATE_LIMIT_EXCEEDED', {
       ip: req.ip,
@@ -326,7 +326,7 @@ export const LogUtils = {
     });
   },
 
-  // Authentication event
+  
   logAuthEvent(event: string, userId?: string, tenantId?: string, ip?: string, success: boolean = true): void {
     const logger = loggers.auth.withContext({
       userId,
@@ -342,7 +342,7 @@ export const LogUtils = {
     }
   },
 
-  // Database operation
+  
   logDbOperation(operation: string, table: string, duration: number, success: boolean, error?: Error): void {
     const logger = loggers.database.withContext({
       operation,
@@ -363,7 +363,7 @@ export const LogUtils = {
   },
 };
 
-// Health check for logging
+
 export const HealthLogger = {
   check: (): { healthy: boolean; lastLog: string | null; loggerStatus: string } => {
     try {
@@ -384,10 +384,10 @@ export const HealthLogger = {
   },
 };
 
-// Performance monitoring setup
+
 export const PerformanceMonitor = {
-  // Track slow queries
-  slowQueryThreshold: 1000, // 1 second
+  
+  slowQueryThreshold: 1000, 
 
   logSlowQuery(query: string, duration: number, params: any = {}): void {
     if (duration > PerformanceMonitor.slowQueryThreshold) {
@@ -399,8 +399,8 @@ export const PerformanceMonitor = {
     }
   },
 
-  // Track slow API responses
-  slowApiThreshold: 5000, // 5 seconds
+  
+  slowApiThreshold: 5000, 
 
   logSlowApi(route: string, method: string, statusCode: number, responseTime: number): void {
     if (responseTime > PerformanceMonitor.slowApiThreshold) {
@@ -414,7 +414,7 @@ export const PerformanceMonitor = {
     }
   },
 
-  // Get performance summary
+  
   getSummary(): {
     totalOperations: number;
     averageDuration: number;

@@ -8,7 +8,7 @@ const router = Router();
 
 router.use(authenticate);
 
-// Master catalogs
+
 router.get('/medications', healthController.getMedications);
 router.post('/medications', isFarmAdminOrAbove, healthController.createMedication);
 router.put('/medications/:id', isFarmAdminOrAbove, healthController.updateMedication);
@@ -24,7 +24,7 @@ router.post('/diseases', isFarmAdminOrAbove, healthController.createDisease);
 router.put('/diseases/:id', isFarmAdminOrAbove, healthController.updateDisease);
 router.delete('/diseases/:id', isFarmAdminOrAbove, healthController.deleteDisease);
 
-// Health Records
+
 router.post('/records', validate(createHealthRecordSchema), healthController.createRecord);
 router.get('/records', healthController.getRecords);
 router.get('/records/:id', healthController.getRecord);

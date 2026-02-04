@@ -3,12 +3,12 @@ import { prisma } from '../config/database';
 
 export const auditLog = (action: string, entityType?: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    // Guardar el método original de res.json
+    
     const originalJson = res.json.bind(res);
 
-    // Sobrescribir res.json para capturar la respuesta
+    
     res.json = function (data: any) {
-      // Solo registrar si la operación fue exitosa
+      
       if (res.statusCode >= 200 && res.statusCode < 300 && req.user) {
         const entityId = 
           data?.data?.id || 
@@ -16,7 +16,7 @@ export const auditLog = (action: string, entityType?: string) => {
           req.body.id || 
           null;
 
-        // Fire and forget - no bloquear la respuesta
+        
         prisma.auditLog.create({
           data: {
             tenantId: req.user.tenantId,

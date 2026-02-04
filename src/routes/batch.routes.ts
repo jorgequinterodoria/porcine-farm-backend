@@ -20,7 +20,7 @@ router.get('/', batchController.getAll);
 router.get('/:id', batchController.getOne);
 router.put('/:id', validate(updateBatchSchema), batchController.update);
 
-// Gestión de animales en el lote
+
 router.post('/:id/animals', validate(addBatchAnimalSchema), batchController.addAnimal);
 router.delete('/:id/animals', validate(removeBatchAnimalSchema), batchController.removeAnimal);
 

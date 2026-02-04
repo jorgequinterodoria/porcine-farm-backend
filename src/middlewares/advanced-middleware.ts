@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { loggers, LogUtils } from '../config/logger';
 
-// Enhanced rate limiting middleware
+
 export const advancedRateLimitingMiddleware = (options: {
   windowMs?: number;
   max?: number;
   keyGenerator?: (req: Request) => string;
 }) => {
   const {
-    windowMs = 15 * 60 * 1000, // 15 minutes
+    windowMs = 15 * 60 * 1000, 
     max = 100,
     keyGenerator = (req: Request) => LogUtils.generateCorrelationId(),
   } = options;
@@ -20,43 +20,43 @@ export const advancedRateLimitingMiddleware = (options: {
   };
 
   return (req: Request, res: Response, next: NextFunction) => {
-    // Skip rate limiting for authenticated admins
+    
     if ((req.user as any)?.role === 'super_admin') {
       return next();
     }
 
-    // Skip for health checks
+    
     if (req.path.startsWith('/health')) {
       return next();
     }
 
-    // Get client identifier
+    
     const clientId = getClientIdentifier(req);
     const rateLimitKey = `rate-limit:${clientId}`;
     
-    // Memory store for rate limiting
+    
     const rateLimitStore = new Map<string, { count: number; resetTime: number; violations: number }>();
     
     const now = Date.now();
     const limit = max;
     const windowMsDuration = windowMs;
     
-    // Check rate limit
+    
     const current = rateLimitStore.get(clientId) || { count: 0, resetTime: now, violations: 0 };
     const timeSinceReset = now - current.resetTime;
     
-    // Reset window if passed
+    
     if (timeSinceReset > windowMsDuration) {
       rateLimitStore.set(clientId, { count: 1, resetTime: now, violations: 0 });
     } else {
       current.count++;
     }
     
-    // Check if limit exceeded
+    
     if (current.count > limit) {
       current.violations++;
       
-      // Log rate limit violation
+      
       loggers.security.logSecurity('RATE_LIMIT_EXCEEDED', {
         clientId,
         currentCount: current.count,
@@ -69,10 +69,10 @@ export const advancedRateLimitingMiddleware = (options: {
         timestamp: new Date().toISOString(),
       });
       
-      // Implement progressive blocking
-      const delay = Math.min(1000 * Math.pow(2, current.violations - 1), 10000); // Exponential backoff
       
-      // Block for high violations
+      const delay = Math.min(1000 * Math.pow(2, current.violations - 1), 10000); 
+      
+      
       if (current.violations > 10) {
         loggers.security.logSecurity('RATE_LIMIT_BLOCKED', {
           clientId,
@@ -91,7 +91,7 @@ export const advancedRateLimitingMiddleware = (options: {
         return;
       }
       
-      // Add delay for moderate violations
+      
       if (current.violations > 5) {
         loggers.security.logSecurity('RATE_LIMIT_DELAYED', {
           clientId,
@@ -104,7 +104,7 @@ export const advancedRateLimitingMiddleware = (options: {
         return;
       }
       
-      // Set rate limit headers
+      
       res.setHeader('X-RateLimit-Limit', limit);
       res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - current.count));
       res.setHeader('X-RateLimit-Reset', new Date(now + windowMs).toISOString());
@@ -119,17 +119,17 @@ export const advancedRateLimitingMiddleware = (options: {
       return;
     }
     
-    // Update store
+    
     rateLimitStore.set(clientId, current);
     
     next();
   };
 };
 
-// Global API Gateway middleware
+
 export const apiGatewayMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Log all API requests
+    
     const logger = loggers.request.withContext(LogUtils.extractUserInfo(req));
     
     logger.info(`API Gateway: ${req.method} ${req.path}`, {
@@ -139,16 +139,16 @@ export const apiGatewayMiddleware = () => {
       ip: req.ip,
     });
     
-    // Add API version header
+    
     res.setHeader('API-Version', 'v1.0');
     
-    // Add security headers
+    
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     
-    // Add correlation ID
+    
     const correlationId = LogUtils.generateCorrelationId();
     res.setHeader('X-Correlation-ID', correlationId);
     
@@ -156,10 +156,10 @@ export const apiGatewayMiddleware = () => {
   };
 };
 
-// Security headers middleware
+
 export const securityHeadersMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Content Security Policy
+    
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -174,7 +174,7 @@ export const securityHeadersMiddleware = () => {
     
     res.setHeader('Content-Security-Policy', csp.join('; '));
     
-    // Additional security headers
+    
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -185,17 +185,17 @@ export const securityHeadersMiddleware = () => {
   };
 };
 
-// Request tracing middleware
+
 export const tracingMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction) => {
     const correlationId = LogUtils.generateCorrelationId();
     const startTime = Date.now();
     
-    // Add tracing headers
+    
     res.setHeader('X-Request-ID', correlationId);
     res.setHeader('X-Request-Start-Time', startTime.toISOString());
     
-    // Log request start
+    
     loggers.app.info(`Request started: ${req.method} ${req.path}`, {
       requestId: correlationId,
       startTime,
@@ -205,7 +205,7 @@ export const tracingMiddleware = () => {
       userAgent: req.headers['user-agent'],
     });
     
-    // Intercept response to calculate duration
+    
     const originalSend = res.send;
     const originalJson = res.json;
     
@@ -219,7 +219,7 @@ export const tracingMiddleware = () => {
         statusCode: res.statusCode,
       });
       
-      // Log request completion
+      
       if (res.statusCode < 400) {
         logger.info(`Request completed successfully`, {
           duration,
@@ -235,7 +235,7 @@ export const tracingMiddleware = () => {
       }
     });
     
-    // Enhanced response methods
+    
     res.send = function(data) {
       const duration = Date.now() - startTime;
       const logger = loggers.app.withContext({
@@ -247,7 +247,7 @@ export const tracingMiddleware = () => {
         responseSize: JSON.stringify(data).length,
       });
       
-      // Log before sending
+      
       if (res.statusCode < 400) {
         logger.info(`Response sent`, {
           duration,
@@ -270,7 +270,7 @@ export const tracingMiddleware = () => {
         responseSize: JSON.stringify(data).length,
       });
       
-      // Log before sending
+      
       if (res.statusCode < 400) {
         logger.info(`Response sent`, {
           duration,

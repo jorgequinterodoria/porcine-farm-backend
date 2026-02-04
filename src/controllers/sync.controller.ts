@@ -4,10 +4,10 @@ import { syncService } from '../services/sync.service';
 
 export class SyncController {
   
-  /**
-   * GET /api/sync/pull
-   * Returns all changes since the provided timestamp
-   */
+  
+
+
+
   async pull(req: Request, res: Response, next: NextFunction) {
     try {
       // @ts-ignore - User is attached by auth middleware
@@ -34,10 +34,10 @@ export class SyncController {
     }
   }
 
-  /**
-   * POST /api/sync/push
-   * Accepts a batch of changes to apply to the server
-   */
+  
+
+
+
   async push(req: Request, res: Response, next: NextFunction) {
     try {
       // @ts-ignore

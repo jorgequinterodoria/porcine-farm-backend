@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { cacheService } from '../config/cache';
 
-/**
- * Enhanced animal service with caching
- */
+
+
+
 export class CachedAnimalService {
-  private animalService: any; // Import your existing animal service
+  private animalService: any; 
 
   constructor(animalService: any) {
     this.animalService = animalService;
@@ -18,7 +18,7 @@ export class CachedAnimalService {
       tenantId,
       `animals:${JSON.stringify(filters)}`,
       () => this.animalService.findAll(tenantId, filters),
-      300 // 5 minutes
+      300 
     );
   }
 
@@ -29,14 +29,14 @@ export class CachedAnimalService {
       tenantId,
       `animal:${id}`,
       () => this.animalService.findOne(tenantId, id),
-      600 // 10 minutes
+      600 
     );
   }
 
   async create(tenantId: string, data: any) {
     const result = await this.animalService.create(tenantId, data);
     
-    // Invalidate related caches
+    
     await cacheService.invalidateAllTenantCache(tenantId);
     
     return result;
@@ -45,7 +45,7 @@ export class CachedAnimalService {
   async update(tenantId: string, id: string, data: any) {
     const result = await this.animalService.update(tenantId, id, data);
     
-    // Invalidate specific and list caches
+    
     await cacheService.invalidateTenantCache(tenantId, `animal:${id}`);
     await cacheService.invalidatePattern(`tenant:${tenantId}:animals:*`);
     
@@ -55,43 +55,43 @@ export class CachedAnimalService {
   async delete(tenantId: string, id: string) {
     const result = await this.animalService.delete(tenantId, id);
     
-    // Invalidate all animal-related caches for tenant
+    
     await cacheService.invalidateAllTenantCache(tenantId);
     
     return result;
   }
 }
 
-/**
- * Cache utilities for common patterns
- */
+
+
+
 export const CacheUtils = {
-  /**
-   * Generate cache key for tenant resources
-   */
+  
+
+
   tenantKey: (tenantId: string, resource: string, identifier?: string) => {
     return identifier 
       ? `tenant:${tenantId}:${resource}:${identifier}`
       : `tenant:${tenantId}:${resource}`;
   },
 
-  /**
-   * Invalidate all caches for a specific resource type
-   */
+  
+
+
   invalidateResource: async (tenantId: string, resource: string) => {
     const pattern = `tenant:${tenantId}:${resource}:*`;
     await cacheService.invalidatePattern(pattern);
   },
 
-  /**
-   * Warm up frequently accessed data
-   */
+  
+
+
   warmupTenantData: async (tenantId: string) => {
     const warmupFunctions = [
       {
         key: `tenant:${tenantId}:animals:basic`,
         fn: async () => {
-          // Import and call animal service
+          
           const { animalService } = await import('../services/animal.service');
           return animalService.findAll(tenantId, { limit: 50 });
         },

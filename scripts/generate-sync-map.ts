@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-// 1. CONFIGURACIÓN
+
 const SCHEMA_PATH = path.join(process.cwd(), 'prisma/schema.prisma');
 const OUTPUT_PATH = path.join(process.cwd(), 'src/config/sync-map.ts');
 
@@ -17,12 +17,12 @@ try {
 
     let currentModel: string | null = null;
     let currentBody: string = '';
-    let braceCount = 0; // Contador de llaves para manejar anidación
+    let braceCount = 0; 
 
     for (const line of fileLines) {
         const trimmedLine = line.trim();
 
-        // Detectar inicio de modelo
+        
         const modelStart = trimmedLine.match(/^model\s+(\w+)\s+/);
 
         if (modelStart) {
@@ -34,32 +34,32 @@ try {
         if (currentModel) {
             currentBody += line + '\n';
 
-            // Contar llaves para saber cuándo termina realmente el modelo
-            // Esto evita romperse con default("{}")
+            
+            
             braceCount += (line.match(/{/g) || []).length;
             braceCount -= (line.match(/}/g) || []).length;
 
-            // Si cerramos todas las llaves, analizamos el bloque acumulado
+            
             if (braceCount === 0 && currentBody.trim().length > 0) {
 
-                // Buscamos deletedAt (Soft Delete) - Requisito para sync
+                
                 const hasDeletedAt = /deletedAt\s+DateTime\?/.test(currentBody);
 
                 if (hasDeletedAt) {
-                    // Buscamos el nombre de la tabla
+                    
                     const mapMatch = currentBody.match(/@@map\("([^"]+)"\)/);
                     const tableName = mapMatch ? mapMatch[1] : currentModel.toLowerCase();
 
                     syncModels[currentModel] = tableName;
                 }
 
-                // Reset
+                
                 currentModel = null;
             }
         }
     }
 
-    // GENERAR ARCHIVO
+    
     const fileContent = `// ⚠️ ESTE ARCHIVO ES GENERADO AUTOMÁTICAMENTE.
 // No lo edites manualmente. Ejecuta: npx tsx scripts/generate-sync-map.ts
 
@@ -82,7 +82,7 @@ export const isSyncableTable = (tableName: string): boolean => {
 
     console.log(`✅ Mapa generado con éxito en: ${OUTPUT_PATH}`);
     console.log(`📊 Modelos detectados para sync: ${Object.keys(syncModels).length}`);
-    // Imprimimos la lista para verificar visualmente
+    
     console.log(Object.keys(syncModels).sort());
 
 } catch (error) {

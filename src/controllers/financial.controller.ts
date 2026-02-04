@@ -3,7 +3,7 @@ import { asyncHandler } from '../middlewares/errorHandler.middleware';
 import { financialService } from '../services/financial.service';
 
 export class FinancialController {
-    // Categories
+    
     /**
      * @swagger
      * /financial/categories:
@@ -51,7 +51,7 @@ export class FinancialController {
         res.status(200).json({ success: true, data: result });
     });
 
-    // Transactions
+    
     /**
      * @swagger
      * /financial/transactions:
@@ -123,7 +123,7 @@ export class FinancialController {
         res.status(200).json({ success: true, data: result });
     });
 
-    // Sales
+    
     /**
      * @swagger
      * /financial/sales:

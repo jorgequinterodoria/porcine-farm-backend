@@ -20,10 +20,10 @@ export class CacheService {
       lazyConnect: true,
     });
 
-    // Memory cache fallback
+    
     this.memoryCache = new Map();
 
-    // Redis event handlers
+    
     this.redis.on('connect', () => {
       console.log('✅ Redis connected successfully');
     });
@@ -44,8 +44,8 @@ export class CacheService {
     return CacheService.instance;
   }
 
-  // Generic cache methods
-  // Memory cache fallback methods
+  
+  
   private getFromMemory<T>(key: string): T | null {
     const entry = this.memoryCache.get(key);
     if (!entry) return null;
@@ -116,7 +116,7 @@ export class CacheService {
     }
   }
 
-  // Tenant-specific cache methods
+  
   async getTenantCache<T>(tenantId: string, key: string): Promise<T | null> {
     const fullKey = `tenant:${tenantId}:${key}`;
     return this.get<T>(fullKey);
@@ -137,7 +137,7 @@ export class CacheService {
     await this.invalidatePattern(pattern);
   }
 
-  // Session management
+  
   async setSession(sessionId: string, sessionData: any, ttlSeconds: number = 86400): Promise<void> {
     const key = `session:${sessionId}`;
     await this.set(key, sessionData, ttlSeconds);
@@ -153,19 +153,19 @@ export class CacheService {
     await this.del(key);
   }
 
-  // Query result caching
+  
   async cacheQuery<T>(
     key: string,
     queryFn: () => Promise<T>,
     ttlSeconds: number = 300
   ): Promise<T> {
-    // Try to get from cache first
+    
     const cached = await this.get<T>(key);
     if (cached !== null) {
       return cached;
     }
 
-    // Execute query and cache result
+    
     const result = await queryFn();
     await this.set(key, result, ttlSeconds);
     return result;
@@ -181,7 +181,7 @@ export class CacheService {
     return this.cacheQuery(fullKey, queryFn, ttlSeconds);
   }
 
-  // Cache warming and bulk operations
+  
   async mget<T>(keys: string[]): Promise<(T | null)[]> {
     try {
       const values = await this.redis.mget(...keys);
@@ -218,7 +218,7 @@ export class CacheService {
     }
   }
 
-  // Health check
+  
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy', redis: boolean, fallback: boolean }> {
     try {
       await this.redis.ping();
@@ -228,7 +228,7 @@ export class CacheService {
     }
   }
 
-  // Statistics
+  
   async getStats(): Promise<{
     connected: boolean;
     memory: string;
@@ -252,7 +252,7 @@ export class CacheService {
     }
   }
 
-  // Cleanup and disconnect
+  
   async disconnect(): Promise<void> {
     try {
       await this.redis.quit();
@@ -263,5 +263,5 @@ export class CacheService {
   }
 }
 
-// Export singleton instance
+
 export const cacheService = CacheService.getInstance();
