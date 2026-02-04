@@ -139,7 +139,8 @@ model Breed {
   characteristics    String?  @db.Text
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   animals Animal[]
   
   @@map("breeds")
@@ -157,7 +158,8 @@ model Medication {
   manufacturer         String?  @db.VarChar(255)
   isActive             Boolean  @default(true) @map("is_active")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   treatments MedicationTreatment[]
   
   @@map("medications")
@@ -176,7 +178,8 @@ model Vaccine {
   boosterIntervalDays Int?     @map("booster_interval_days")
   isActive            Boolean  @default(true) @map("is_active")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6) // <--- AGREGAR SI FALTA
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   vaccinations Vaccination[]
   
   @@map("vaccines")
@@ -195,7 +198,8 @@ model Disease {
   isZoonotic         Boolean  @default(false) @map("is_zoonotic")
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   healthRecords    HealthRecord[]
   mortalityRecords MortalityRecord[]
   
@@ -393,7 +397,7 @@ model Batch {
   status          String    @default("active") @db.VarChar(50)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   batchAnimals         BatchAnimal[]
   healthRecords        HealthRecord[]
@@ -470,7 +474,7 @@ model Pregnancy {
   notes                  String?   @db.Text
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
-  
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   animal          Animal           @relation(fields: [animalId], references: [id], onDelete: Cascade)
   breedingService BreedingService? @relation(fields: [breedingServiceId], references: [id])
@@ -579,7 +583,8 @@ model Vaccination {
   administeredBy   String?  @map("administered_by") @db.Uuid
   notes            String?  @db.Text
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   animal        Animal? @relation(fields: [animalId], references: [id], onDelete: Cascade)
   batch         Batch?  @relation(fields: [batchId], references: [id])
@@ -606,7 +611,7 @@ model MedicationTreatment {
   notes            String?   @db.Text
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   animal        Animal?       @relation(fields: [animalId], references: [id], onDelete: Cascade)
   batch         Batch?        @relation(fields: [batchId], references: [id])
@@ -678,7 +683,9 @@ model FeedInventory {
   maximumStockKg    Decimal?  @map("maximum_stock_kg") @db.Decimal(10, 2)
   lastPurchaseDate  DateTime? @map("last_purchase_date") @db.Date
   lastPurchasePrice Decimal?  @map("last_purchase_price") @db.Decimal(10, 2)
-  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamp(6)
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   feedType FeedType @relation(fields: [feedTypeId], references: [id], onDelete: Cascade)
@@ -699,7 +706,8 @@ model FeedMovement {
   notes          String?  @db.Text
   recordedBy     String?  @map("recorded_by") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   feedType FeedType @relation(fields: [feedTypeId], references: [id], onDelete: Cascade)
   recorder User?    @relation("RecordedBy", fields: [recordedBy], references: [id])
@@ -773,7 +781,7 @@ model FinancialTransaction {
   recordedBy        String?  @map("recorded_by") @db.Uuid
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category TransactionCategory @relation(fields: [categoryId], references: [id])
   animal   Animal?             @relation(fields: [animalId], references: [id])
@@ -798,7 +806,7 @@ model AnimalSale {
   recordedBy      String?  @map("recorded_by") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(6)
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   recorder          User?              @relation("RecordedBy", fields: [recordedBy], references: [id])
   animalSaleDetails AnimalSaleDetail[]

@@ -1,60 +1,62 @@
-
 import { PrismaClient, Prisma } from '@prisma/client';
-import { prisma } from '../config/database';
-
-// Mapping between Prisma Models and WatermelonDB Tables
-// Key: Prisma Model Name, Value: WatermelonDB Table Name
-const MODEL_TO_TABLE: Record<string, string> = {
-  'Animal': 'animals',
-  'Task': 'tasks',
-  'FeedConsumption': 'feed_consumption',
-  // Add other mappings as you implement them in the frontend schema
-  // 'HealthRecord': 'health_records',
-  // 'Facility': 'facilities',
-  // 'Pen': 'pens',
-};
-
-// Reverse mapping for Push
-const TABLE_TO_MODEL: Record<string, string> = Object.entries(MODEL_TO_TABLE).reduce((acc, [model, table]) => {
-  acc[table] = model;
-  return acc;
-}, {} as Record<string, string>);
+import { prisma } from '../config/database'; // Ajusta si tu instancia de prisma está en otro lado
+import { SYNC_MODEL_MAP, SyncModelName, SyncTableName } from '../config/sync-map';
 
 export class SyncService {
+  
   /**
-   * Retrieve changes since the last sync
+   * Helper: Convierte nombre del Modelo (PascalCase) a delegado de Prisma (camelCase)
+   * Ej: "AnimalMovement" -> "animalMovement"
+   */
+  private getPrismaDelegate(modelName: string) {
+    const delegateName = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+    // @ts-ignore - Acceso dinámico a prisma
+    return prisma[delegateName];
+  }
+
+  /**
+   * Helper: Busca el nombre del Modelo dado el nombre de la tabla
+   */
+  private getModelFromTableName(tableName: string): string | undefined {
+    return Object.keys(SYNC_MODEL_MAP).find(
+      key => SYNC_MODEL_MAP[key as SyncModelName] === tableName
+    );
+  }
+
+  /**
+   * PULL: Recupera cambios desde la última sincronización
    */
   async getChanges(tenantId: string, lastSyncAt: Date | null) {
     const changes: Record<string, { created: any[], updated: any[], deleted: string[] }> = {};
-    const timestamp = lastSyncAt || new Date(0); // If null, get all (initial sync)
+    const timestamp = lastSyncAt || new Date(0); 
 
-    for (const [modelName, tableName] of Object.entries(MODEL_TO_TABLE)) {
-      // @ts-ignore - Dynamic access to prisma models
-      const model = prisma[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
-      
+    // Iteramos dinámicamente sobre el mapa generado
+    for (const modelName of Object.keys(SYNC_MODEL_MAP) as SyncModelName[]) {
+      const tableName = SYNC_MODEL_MAP[modelName];
+      const model = this.getPrismaDelegate(modelName);
+
       if (!model) {
-        console.warn(`Model ${modelName} not found in Prisma client`);
+        console.warn(`⚠️ Modelo Prisma no encontrado para: ${modelName}`);
         continue;
       }
 
+      // Inicializamos la estructura para esta tabla
       changes[tableName] = { created: [], updated: [], deleted: [] };
-      
+
       try {
-        // 1. Fetch created/updated records
-        // We look for records updated OR created after the timestamp
-        // Ideally, we distinguish created vs updated based on createdAt
+        // 1. Buscar Creados/Actualizados (Activos)
         const records = await model.findMany({
           where: {
             tenantId: tenantId,
             updatedAt: { gt: timestamp },
-            deletedAt: null // Only active records
+            deletedAt: null 
           }
         });
 
         for (const record of records) {
-          // Convert Date objects to timestamps (number) for WatermelonDB
           const recordForClient = this.formatRecordForClient(record);
           
+          // Diferenciamos created vs updated para WatermelonDB (aunque often los trata igual)
           if (record.createdAt > timestamp) {
             changes[tableName].created.push(recordForClient);
           } else {
@@ -62,9 +64,7 @@ export class SyncService {
           }
         }
 
-        // 2. Fetch deleted records
-        // We need Soft Delete logic here. 
-        // Assuming models have deletedAt field.
+        // 2. Buscar Borrados (Soft Delete)
         const deletedRecords = await model.findMany({
           where: {
             tenantId: tenantId,
@@ -76,62 +76,70 @@ export class SyncService {
         changes[tableName].deleted = deletedRecords.map((r: any) => r.id);
 
       } catch (error: any) {
-        console.error(`Error fetching changes for ${modelName}:`, error);
+        console.error(`❌ Error en sync PULL para ${modelName}:`, error);
       }
     }
 
     return {
       changes,
-      timestamp: new Date().getTime(), // Return current server time as timestamp
+      timestamp: new Date().getTime(),
     };
   }
 
   /**
-   * Process changes pushed from the client
+   * PUSH: Procesa los cambios enviados por el cliente
    */
   async processChanges(tenantId: string, payload: { changes: Record<string, { created: any[], updated: any[], deleted: string[] }> }) {
     const results: Record<string, { success: number; errors: any[] }> = {};
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      
+      // Iteramos sobre las tablas que vienen en el request
       for (const [tableName, changeSet] of Object.entries(payload.changes)) {
-        const modelName = TABLE_TO_MODEL[tableName];
-        if (!modelName) continue; // Skip unknown tables
+        
+        const modelName = this.getModelFromTableName(tableName);
+        if (!modelName) {
+            console.warn(`⚠️ Tabla desconocida en PUSH: ${tableName}`);
+            continue; 
+        }
 
-        // @ts-ignore
+        // @ts-ignore - Obtenemos el delegado dentro de la transacción
         const model = tx[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
         if (!model) continue;
 
         results[tableName] = { success: 0, errors: [] };
 
-        // 1. Handle Created Records
-        if (changeSet.created && Array.isArray(changeSet.created)) {
-            for (const record of changeSet.created) {
-                await this.applyChange(model, record, 'create', tenantId, results[tableName]);
-            }
+        // 1. Creados
+        if (changeSet.created?.length > 0) {
+          for (const record of changeSet.created) {
+            await this.applyChange(model, record, 'create', tenantId, results[tableName]);
+          }
         }
 
-        // 2. Handle Updated Records
-        if (changeSet.updated && Array.isArray(changeSet.updated)) {
-            for (const record of changeSet.updated) {
-                await this.applyChange(model, record, 'update', tenantId, results[tableName]);
-            }
+        // 2. Actualizados
+        if (changeSet.updated?.length > 0) {
+          for (const record of changeSet.updated) {
+            await this.applyChange(model, record, 'update', tenantId, results[tableName]);
+          }
         }
 
-        // 3. Handle Deleted Records
-        if (changeSet.deleted && Array.isArray(changeSet.deleted)) {
-            for (const id of changeSet.deleted) {
-                try {
-                    // Soft delete
-                    await model.update({
-                        where: { id },
-                        data: { deletedAt: new Date() }
-                    });
-                    results[tableName].success++;
-                } catch (error: any) {
-                    console.error(`Error deleting ${modelName} record ${id}:`, error);
-                    results[tableName].errors.push({ id, error: error.message });
+        // 3. Borrados
+        if (changeSet.deleted?.length > 0) {
+          for (const id of changeSet.deleted) {
+            try {
+              await model.update({
+                where: { id },
+                data: { 
+                    deletedAt: new Date(),
+                    updatedAt: new Date() // Importante actualizar updatedAt también
                 }
+              });
+              results[tableName].success++;
+            } catch (error: any) {
+              console.error(`Error borrando ${modelName} ID ${id}:`, error);
+              results[tableName].errors.push({ id, error: error.message });
             }
+          }
         }
       }
     });
@@ -140,63 +148,74 @@ export class SyncService {
   }
 
   private async applyChange(model: any, record: any, type: 'create' | 'update', tenantId: string, result: { success: number; errors: any[] }): Promise<void> {
-      try {
-        const { id, ...data } = record;
-        
-        // Ensure tenantId security
-        // If client sends tenantId, verify it. If not, inject it.
-        if (data.tenantId && data.tenantId !== tenantId) {
-            throw new Error('Security violation: Tenant ID mismatch');
-        }
-        data.tenantId = tenantId;
-
-        // Convert timestamps from number (WatermelonDB) to Date (Prisma)
-        this.formatRecordForServer(data);
-
-        // Remove system fields if present
-        delete data._status;
-        delete data._changed;
-
-        if (type === 'create') {
-            await model.create({
-                data: { id, ...data }
-            });
-        } else {
-            await model.update({
-                where: { id },
-                data: data
-            });
-        }
-        result.success++;
-      } catch (error: any) {
-          // If create fails because it exists, try update (idempotency)
-          if (type === 'create' && error.code === 'P2002') {
-             return this.applyChange(model, record, 'update', tenantId, result);
-          }
-          console.error(`Error applying ${type} for record ${record.id}:`, error);
-          result.errors.push({ id: record.id, error: error.message });
+    try {
+      const { id, ...data } = record;
+      
+      // Seguridad: Forzar tenantId
+      if (data.tenantId && data.tenantId !== tenantId) {
+        throw new Error('Violación de seguridad: Tenant ID no coincide');
       }
+      data.tenantId = tenantId;
+
+      // Conversión de tipos (Number -> Date)
+      this.formatRecordForServer(data);
+
+      // Limpieza de campos internos de WatermelonDB
+      delete data._status;
+      delete data._changed;
+
+      if (type === 'create') {
+        await model.create({
+          data: { id, ...data }
+        });
+      } else {
+        await model.update({
+          where: { id },
+          data: data
+        });
+      }
+      result.success++;
+    } catch (error: any) {
+      // Idempotencia: Si falla crear porque ya existe, intentamos actualizar
+      if (type === 'create' && error.code === 'P2002') {
+        return this.applyChange(model, record, 'update', tenantId, result);
+      }
+      console.error(`Error aplicando ${type} registro ${record.id}:`, error.message);
+      result.errors.push({ id: record.id, error: error.message });
+    }
   }
 
+  // --- HELPERS DE FORMATO ---
+
   private formatRecordForClient(record: any) {
-      const result = { ...record };
-      // Convert Date objects to unix timestamps (ms)
-      for (const key in result) {
-          if (result[key] instanceof Date) {
-              result[key] = result[key].getTime();
-          }
+    const result = { ...record };
+    // Convertir Date -> Timestamp (number)
+    for (const key in result) {
+      if (result[key] instanceof Date) {
+        result[key] = result[key].getTime();
       }
-      return result;
+      // Prisma Decimal -> String o Number (Watermelon prefiere Number si es dinero simple, o String si requiere precisión)
+      if (result[key] instanceof Prisma.Decimal) {
+          result[key] = result[key].toNumber(); 
+      }
+    }
+    return result;
   }
 
   private formatRecordForServer(record: any) {
-      // Convert timestamps fields ending in 'At' or 'Date' from number to Date
-      // This is a heuristic, might need strict schema mapping
-      for (const key in record) {
-          if ((key.endsWith('At') || key.endsWith('Date') || key === 'date') && typeof record[key] === 'number') {
-              record[key] = new Date(record[key]);
-          }
+    // Heurística para detectar campos de fecha que vienen como números
+    // Watermelon envía timestamps (números), Prisma quiere Date objects
+    for (const key in record) {
+      const value = record[key];
+      // Si el campo termina en At, Date, o es 'date', y el valor es un número positivo
+      if (
+        typeof value === 'number' && 
+        value > 0 &&
+        (key.endsWith('At') || key.endsWith('Date') || key === 'date' || key === 'birthDate')
+      ) {
+        record[key] = new Date(value);
       }
+    }
   }
 }
 
